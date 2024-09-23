@@ -92,7 +92,7 @@ void on_message(connection_hdl hdl,
       // Handle other message types
       std::cout << "Received message: " << json["chat"]["message"] << std::endl;
     } else if (json["type"] == "client_list_request") {
-      // sending client_update message to all clients
+      // sending client_list message to all clients
       nlohmann::json client_update = {{"type", "client_list"},
                                       {"servers", nlohmann::json::array()}};
 

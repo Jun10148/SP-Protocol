@@ -19,16 +19,41 @@ connection_hdl client_hdl;
 
 std::string username;
 
+class Client {
+ public:
+  std::string client_id;
+  std::string public_key;
+  connection_hdl client_hdl;
+
+  Client(const std::string& client_id, const std::string& public_key,
+         connection_hdl hdl)
+      : client_id(client_id), public_key(public_key), client_hdl(hdl) {}
+};
+class Server {
+ public:
+  std::string address;
+  std::string server_id;
+  std::vector<Client> clients;
+
+  Server(const std::string& address, const std::string& server_id)
+      : address(address), server_id(server_id) {}
+
+  // Add a client to the server
+  void add_client(const Client& client) { clients.push_back(client); }
+};
+
+std::vector<Server> server_list;
+
 std::string generate_rsa_key() {
-  RSA *rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
+  RSA* rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
   if (!rsa) {
     std::cerr << "Failed to generate RSA key" << std::endl;
     return "";
   }
 
-  BIO *bio = BIO_new(BIO_s_mem());
+  BIO* bio = BIO_new(BIO_s_mem());
   PEM_write_bio_RSAPublicKey(bio, rsa);
-  BUF_MEM *buffer;
+  BUF_MEM* buffer;
   BIO_get_mem_ptr(bio, &buffer);
   BIO_set_close(bio, BIO_NOCLOSE);
   BIO_flush(bio);
@@ -59,7 +84,41 @@ void on_open(connection_hdl hdl) {
 
 void on_message(connection_hdl,
                 client<websocketpp::config::asio_client>::message_ptr msg) {
-  std::cout << "Received from server: " << msg->get_payload() << std::endl;
+  auto payload = msg->get_payload();
+  try {
+    auto json = nlohmann::json::parse(payload);
+    if (json["type"] == "client_list") {
+      server_list.clear();
+      for (const auto& server_json : json["servers"]) {
+        std::string address = server_json["address"];
+        std::string server_id = server_json["server-id"];
+        Server server(address, server_id);
+
+        for (const auto& client_json : server_json["clients"]) {
+          std::string client_id = client_json["client-id"];
+          std::string public_key = client_json["public-key"];
+          Client client(client_id, public_key, client_hdl);
+          server.add_client(client);
+        }
+
+        server_list.push_back(server);
+      }
+      for (const auto& server : server_list) {
+        cout << "users in server-id: " << server.server_id
+             << " located at: " << server.address << endl;
+
+        for (const auto& client : server.clients) {
+          cout << client.client_id << endl;
+        }
+
+        server_list.push_back(server);
+      }
+    } else {
+      std::cout << "Received message: " << payload << std::endl;
+    }
+  } catch (const nlohmann::json::parse_error& e) {
+    std::cerr << "JSON parse error: " << e.what() << std::endl;
+  }
 }
 
 void client_send_loop() {
@@ -105,7 +164,7 @@ void client_send_loop() {
   }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   if (argc != 2) {
     cout << "erroneous input" << endl;
     return 0;
