@@ -91,7 +91,7 @@ void client_send_loop() {
         } else if (first_word == "clients") {
           cout << "requesting server for client list" << endl;
           nlohmann::json client_req;
-          client_req["type"] = "client_update_request";
+          client_req["type"] = "client_list_request";
           client_instance.send(client_hdl, client_req.dump(),
                                websocketpp::frame::opcode::text);
         } else {
