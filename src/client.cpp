@@ -1,8 +1,13 @@
+#include <openssl/err.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <openssl/rsa.h>
 
+#include <iomanip>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <websocketpp/client.hpp>
@@ -43,26 +48,114 @@ class Server {
 };
 
 std::vector<Server> server_list;
+RSA* myRSA;
+int counter = 0;
 
-std::string generate_rsa_key() {
-  RSA* rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
-  if (!rsa) {
+RSA* generateRSAKey() {
+  RSA* newrsa = RSA_generate_key(2048, 65537, nullptr, nullptr);
+  if (!newrsa) {
     std::cerr << "Failed to generate RSA key" << std::endl;
+    return nullptr;
+  }
+  return newrsa;
+}
+
+std::string getPublicKey(RSA* rsa) {
+  BIO* bio = BIO_new(BIO_s_mem());
+  if (!PEM_write_bio_RSA_PUBKEY(bio, rsa)) {
+    std::cerr << "Failed to write public key" << std::endl;
+    BIO_free(bio);
     return "";
   }
 
-  BIO* bio = BIO_new(BIO_s_mem());
-  PEM_write_bio_RSAPublicKey(bio, rsa);
-  BUF_MEM* buffer;
-  BIO_get_mem_ptr(bio, &buffer);
+  BUF_MEM* bufferPtr;
+  BIO_get_mem_ptr(bio, &bufferPtr);
   BIO_set_close(bio, BIO_NOCLOSE);
-  BIO_flush(bio);
+  BIO_free(bio);
 
-  std::string public_key(buffer->data, buffer->length);
-  BIO_free_all(bio);
-  RSA_free(rsa);
+  std::string publicKey(bufferPtr->data, bufferPtr->length);
+  return publicKey;
+}
 
-  return public_key;
+std::string sha256(const std::string& data) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256(reinterpret_cast<const unsigned char*>(data.c_str()), data.size(),
+         hash);
+
+  std::stringstream ss;
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    ss << std::hex << std::setw(2) << std::setfill('0')
+       << static_cast<int>(hash[i]);
+  }
+  return ss.str();
+}
+
+// written by chatgpt (checked if it works with openssl command output vs this)
+std::string base64Encode(const std::string& input) {
+  static const std::string base64Chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz"
+      "0123456789+/";
+
+  std::string output;
+  int i = 0;
+  unsigned char array3[3];
+  unsigned char array4[4];
+
+  for (size_t j = 0; j < input.size(); j++) {
+    array3[i++] = input[j];
+    if (i == 3) {
+      array4[0] = (array3[0] & 0xfc) >> 2;
+      array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
+      array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
+      array4[3] = array3[2] & 0x3f;
+
+      for (i = 0; (i < 4); i++) {
+        output += base64Chars[array4[i]];
+      }
+      i = 0;
+    }
+  }
+
+  if (i) {
+    for (int j = i; j < 3; j++) {
+      array3[j] = '\0';
+    }
+
+    array4[0] = (array3[0] & 0xfc) >> 2;
+    array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
+    array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
+    array4[3] = array3[2] & 0x3f;
+
+    for (int j = 0; j < i + 1; j++) {
+      output += base64Chars[array4[j]];
+    }
+
+    while ((i++ < 3)) {
+      output += '=';
+    }
+  }
+
+  return output;
+}
+
+std::string getPublicKeyFingerprint(RSA* rsa) {
+  // Convert RSA public key to PEM format
+  BIO* bio = BIO_new(BIO_s_mem());
+  PEM_write_bio_RSA_PUBKEY(bio, rsa);
+
+  // Get the PEM formatted public key
+  char* pemData;
+  long pemLength = BIO_get_mem_data(bio, &pemData);
+  std::string publicKeyPem(pemData, pemLength);
+
+  // Compute the SHA-256 fingerprint
+  std::string fingerprint = sha256(publicKeyPem);
+
+  // Clean up
+  BIO_free(bio);
+
+  return fingerprint;
 }
 
 void on_open(connection_hdl hdl) {
@@ -70,7 +163,13 @@ void on_open(connection_hdl hdl) {
   client_hdl = hdl;
 
   // Generate RSA key pair
-  std::string public_key = generate_rsa_key();
+  myRSA = generateRSAKey();
+  std::string public_key;
+  if (myRSA) {
+    public_key = getPublicKey(myRSA);
+  } else {
+    cout << "error: couldnt generate rsa key" << endl;
+  }
 
   nlohmann::json hello_message;
   hello_message["data"]["type"] = "hello";
@@ -113,8 +212,12 @@ void on_message(connection_hdl,
 
         server_list.push_back(server);
       }
-    } else {
-      std::cout << "Received message: " << payload << std::endl;
+    } else if (json["data"]["type"] == "public_chat"){
+        cout << "public chat from: " << json["data"]["sender"] << endl;
+        cout << json["data"]["message"] << endl;
+    } 
+    else {
+      // std::cout << "Received message: " << payload << std::endl;
     }
   } catch (const nlohmann::json::parse_error& e) {
     std::cerr << "JSON parse error: " << e.what() << std::endl;
@@ -140,13 +243,46 @@ void client_send_loop() {
         std::string first_word;
         iss >> first_word;  // Extract the first word
 
-        if (first_word == "chat") {
-          cout << "sending a chat" << endl;
-          nlohmann::json chat;
-          chat["data"]["type"] = "chat";
-          chat["chat"]["message"] = "hello lol";
-          client_instance.send(client_hdl, chat.dump(),
+        if (first_word == "send_message") {
+          unsigned char aesKey[32];
+          unsigned char iv[16];
+          RAND_bytes(aesKey, sizeof(aesKey));
+          RAND_bytes(iv, sizeof(iv));
+
+          client_instance.send(client_hdl, "sup",
                                websocketpp::frame::opcode::text);
+        } else if (first_word == "public_chat") {
+          nlohmann::json public_chat;
+          public_chat["data"]["type"] = "public_chat";
+
+          std::string fingerprint = getPublicKeyFingerprint(myRSA);
+          fingerprint = base64Encode(fingerprint);
+          public_chat["data"]["sender"] = fingerprint;
+
+          string text = "";
+          for (int i = 0; i < message.length(); i++) {
+            if (message[i] == '"') {
+              int j = i + 1;
+              while (message[j] != '"' && j < message.length()) {
+                text = text + message[j];
+                j++;
+              }
+              break;
+            }
+          }
+          public_chat["data"]["message"] = text;
+
+          public_chat["type"] = "signed_data";
+          
+          public_chat["counter"] = counter;
+
+          string plain_signature =
+              public_chat["data"].dump() + to_string(counter);
+          public_chat["signature"] = base64Encode(plain_signature); //not a real signature
+
+          client_instance.send(client_hdl, public_chat.dump(),
+                               websocketpp::frame::opcode::text);
+
         } else if (first_word == "clients") {
           cout << "requesting server for client list" << endl;
           nlohmann::json client_req;

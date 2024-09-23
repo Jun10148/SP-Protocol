@@ -1187,13 +1187,23 @@ websocketpp/impl/utilities_impl.hpp
 ../include/websocketpp/version.hpp
 
 /home/seojunlee/SP/SP-Protocol/src/client.cpp
+openssl/err.h
+-
+openssl/evp.h
+-
 openssl/pem.h
 -
+openssl/rand.h
+-
 openssl/rsa.h
+-
+iomanip
 -
 iostream
 -
 nlohmann/json.hpp
+-
+sstream
 -
 string
 -

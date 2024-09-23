@@ -115,6 +115,14 @@ void on_message(connection_hdl hdl,
         echo_server.send(client.client_hdl, client_update.dump(),
                          websocketpp::frame::opcode::text);
       }
+    } else if (json["data"]["type"] == "public_chat") {
+      std::cout << "public chat received" << std::endl;
+      for (const auto& server : server_list) {
+        for (const auto& client : server.clients) {
+          echo_server.send(client.client_hdl, json.dump(),
+                           websocketpp::frame::opcode::text);
+        }
+      }
     } else {
       std::cout << "Received message: " << payload << std::endl;
     }

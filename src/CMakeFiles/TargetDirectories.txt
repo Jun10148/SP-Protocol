@@ -1,4 +1,5 @@
 /home/seojunlee/SP/SP-Protocol/src/CMakeFiles/rebuild_cache.dir
 /home/seojunlee/SP/SP-Protocol/src/CMakeFiles/edit_cache.dir
+/home/seojunlee/SP/SP-Protocol/src/CMakeFiles/test.dir
 /home/seojunlee/SP/SP-Protocol/src/CMakeFiles/client.dir
 /home/seojunlee/SP/SP-Protocol/src/CMakeFiles/server.dir

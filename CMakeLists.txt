@@ -21,3 +21,8 @@ add_executable(client client.cpp)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(client ${Boost_LIBRARIES} OpenSSL::Crypto OpenSSL::SSL)
+
+add_executable(test test.cpp)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${Boost_INCLUDE_DIRS})
+target_link_libraries(test ${Boost_LIBRARIES} OpenSSL::Crypto OpenSSL::SSL)
