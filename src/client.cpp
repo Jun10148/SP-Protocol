@@ -82,11 +82,17 @@ void client_send_loop() {
         iss >> first_word;  // Extract the first word
 
         if (first_word == "chat") {
-          cout << "chatting" << endl;
+          cout << "sending a chat" << endl;
           nlohmann::json chat;
           chat["data"]["type"] = "chat";
           chat["chat"]["message"] = "hello lol";
           client_instance.send(client_hdl, chat.dump(),
+                               websocketpp::frame::opcode::text);
+        } else if (first_word == "clients") {
+          cout << "requesting server for client list" << endl;
+          nlohmann::json client_req;
+          client_req["type"] = "client_update_request";
+          client_instance.send(client_hdl, client_req.dump(),
                                websocketpp::frame::opcode::text);
         } else {
           // Otherwise, send the message to the server
@@ -99,13 +105,13 @@ void client_send_loop() {
   }
 }
 
-int main(int argc, char* argv[]) {
-    if(argc != 2){
-        cout << "erroneous input" << endl;
-        return 0;
-    } else{
-        username = argv[1];
-    }
+int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    cout << "erroneous input" << endl;
+    return 0;
+  } else {
+    username = argv[1];
+  }
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);
