@@ -1,16 +1,26 @@
 to run:
 
+required installations:
+sudo apt-get update
+cmake: sudo apt install cmake
+openssl library: sudo apt-get install libssl-dev
+boost: sudo apt-get install libboost-all-dev
+
+
+delete "CMakeCache.txt"
+
 cd into "src"
 
 then do:
->cmake ..
->make
-./my_executable
+> cmake ..
+> make
 
-this creates a websocket program which sends a json (as a string) to port 9002
+In one terminal do
+> ./server
 
-go on this site:
-https://piehost.com/websocket-tester
+In another do (can be repeated to make many clients)
+./client <username>
 
-enter this as url in their input:
-ws://localhost:9002
+from a client you can do the following commands
+> public_chat "message"  (sends a message to all connected clients)
+> clientes (shows all connected clients and their username/userids
