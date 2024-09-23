@@ -60,21 +60,36 @@ RSA* generateRSAKey() {
   return newrsa;
 }
 
+//new ver by chatgpt
 std::string getPublicKey(RSA* rsa) {
-  BIO* bio = BIO_new(BIO_s_mem());
-  if (!PEM_write_bio_RSA_PUBKEY(bio, rsa)) {
-    std::cerr << "Failed to write public key" << std::endl;
+    if (rsa == nullptr) {
+        std::cerr << "RSA key is null" << std::endl;
+        return "";
+    }
+
+    BIO* bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        std::cerr << "Failed to create BIO" << std::endl;
+        return "";
+    }
+
+    if (!PEM_write_bio_RSA_PUBKEY(bio, rsa)) {
+        std::cerr << "Failed to write public key" << std::endl;
+        BIO_free(bio);
+        return "";
+    }
+
+    BUF_MEM* bufferPtr;
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
     BIO_free(bio);
-    return "";
-  }
 
-  BUF_MEM* bufferPtr;
-  BIO_get_mem_ptr(bio, &bufferPtr);
-  BIO_set_close(bio, BIO_NOCLOSE);
-  BIO_free(bio);
+    if (bufferPtr == nullptr) {
+        std::cerr << "Failed to get memory pointer" << std::endl;
+        return "";
+    }
 
-  std::string publicKey(bufferPtr->data, bufferPtr->length);
-  return publicKey;
+    return std::string(bufferPtr->data, bufferPtr->length);
 }
 
 std::string sha256(const std::string& data) {
