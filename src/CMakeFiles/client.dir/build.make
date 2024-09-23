@@ -81,7 +81,10 @@ client: CMakeFiles/client.dir/client.cpp.o
 client: CMakeFiles/client.dir/build.make
 client: /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0
 client: /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0
+client: /usr/lib/x86_64-linux-gnu/libcrypto.so
+client: /usr/lib/x86_64-linux-gnu/libssl.so
 client: /usr/lib/x86_64-linux-gnu/libboost_atomic.so.1.71.0
+client: /usr/lib/x86_64-linux-gnu/libcrypto.so
 client: CMakeFiles/client.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable client"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/client.dir/link.txt --verbose=$(VERBOSE)

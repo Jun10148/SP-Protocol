@@ -81,7 +81,10 @@ server: CMakeFiles/server.dir/server.cpp.o
 server: CMakeFiles/server.dir/build.make
 server: /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0
 server: /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0
+server: /usr/lib/x86_64-linux-gnu/libcrypto.so
+server: /usr/lib/x86_64-linux-gnu/libssl.so
 server: /usr/lib/x86_64-linux-gnu/libboost_atomic.so.1.71.0
+server: /usr/lib/x86_64-linux-gnu/libcrypto.so
 server: CMakeFiles/server.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable server"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/server.dir/link.txt --verbose=$(VERBOSE)
