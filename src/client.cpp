@@ -1,58 +1,43 @@
 #include <iostream>
-#include <thread>
-#include <atomic>
-#include <unistd.h>
-#include <termios.h>
+#include <string>
+#include <nlohmann/json.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 
-std::atomic<bool> running(true);
+using websocketpp::client;
+using websocketpp::connection_hdl;
 
-// Function to print a message every 5 seconds
-void printMessage() {
-    while (running) {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        std::cout << "This message prints every 5 seconds.\n";
-    }
+typedef client<websocketpp::config::asio_client> ws_client;
+
+ws_client client_instance;
+
+void on_open(connection_hdl hdl) {
+    std::string message = "Hello from the client!";
+    client_instance.send(hdl, message, websocketpp::frame::opcode::text);
+    std::cout << "Sent to server: " << message << std::endl;
 }
 
-// Function to hide input
-void hideInput() {
-    std::string input;
-
-    // Save current terminal settings
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO); // Disable canonical mode and echo
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-    while (running) {
-        input.clear(); // Clear the previous input
-
-        // Read input without displaying it
-        char ch;
-        while ((ch = getchar()) != '\n') { // Stop on Enter key
-            input += ch;
-        }
-
-        // Check for exit command
-        if (input == "exit") {
-            running = false;
-        } else {
-            std::cout << "Input received: " << input << std::endl;
-        }
-    }
-
-    // Restore old terminal settings
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+void on_message(connection_hdl, client<websocketpp::config::asio_client>::message_ptr msg) {
+    std::cout << "Received from server: " << msg->get_payload() << std::endl;
 }
 
 int main() {
-    std::thread messageThread(printMessage);
-    std::thread inputThread(hideInput);
+    client_instance.init_asio();
 
-    inputThread.join(); // Wait for input thread to finish
-    running = false; // Signal the message thread to stop
-    messageThread.join(); // Wait for message thread to finish
+    client_instance.set_open_handler(&on_open);
+    client_instance.set_message_handler(&on_message);
+
+    websocketpp::lib::error_code ec;
+    ws_client::connection_ptr con = client_instance.get_connection("ws://localhost:9002", ec);
+    
+    if (ec) {
+        std::cout << "Connect initialization error: " << ec.message() << std::endl;
+        return 1;
+    }
+
+    client_instance.connect(con);
+    client_instance.run();
+
 
     return 0;
 }

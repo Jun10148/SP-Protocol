@@ -155,7 +155,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=WebSocketJSONTest
+CMAKE_PROJECT_NAME:STATIC=WebSocketChat
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION:STATIC=1.0
@@ -245,6 +245,12 @@ OPENSSL_SSL_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libssl.so
 
 //pkg-config executable
 PKG_CONFIG_EXECUTABLE:FILEPATH=PKG_CONFIG_EXECUTABLE-NOTFOUND
+
+//Value Computed by CMake
+WebSocketChat_BINARY_DIR:STATIC=/home/seojunlee/SP/SP-Protocol/src
+
+//Value Computed by CMake
+WebSocketChat_SOURCE_DIR:STATIC=/home/seojunlee/SP/SP-Protocol
 
 //Value Computed by CMake
 WebSocketJSONTest_BINARY_DIR:STATIC=/home/seojunlee/SP/SP-Protocol/src
