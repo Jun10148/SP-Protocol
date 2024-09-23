@@ -83,6 +83,7 @@ void on_message(connection_hdl hdl,
       std::cout << "Client connected with name: "
                 << server_list[0].clients.back().client_id << std::endl;
       // send a welcome message back to the client
+      // prints error message on client because message isnt json
       echo_server.send(hdl,
                        "Welcome, " + server_list[0].clients.back().client_id,
                        websocketpp::frame::opcode::text);
