@@ -13,6 +13,7 @@ cd into "src"
 
 then do:
 cmake ..
+
 make
 
 In one terminal do
