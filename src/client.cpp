@@ -1,11 +1,12 @@
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
-#include <openssl/rsa.h>
-#include <openssl/pem.h>
 
 using namespace std;
 using websocketpp::client;
@@ -16,40 +17,44 @@ typedef client<websocketpp::config::asio_client> ws_client;
 ws_client client_instance;
 connection_hdl client_hdl;
 
-std::string generate_rsa_key() {
-    RSA *rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
-    if (!rsa) {
-        std::cerr << "Failed to generate RSA key" << std::endl;
-        return "";
-    }
+std::string username;
 
-    BIO *bio = BIO_new(BIO_s_mem());
-    PEM_write_bio_RSAPublicKey(bio, rsa);
-    BUF_MEM *buffer;
-    BIO_get_mem_ptr(bio, &buffer);
-    BIO_set_close(bio, BIO_NOCLOSE);
-    BIO_flush(bio);
-    
-    std::string public_key(buffer->data, buffer->length);
-    BIO_free_all(bio);
-    RSA_free(rsa);
-    
-    return public_key;
+std::string generate_rsa_key() {
+  RSA *rsa = RSA_generate_key(2048, RSA_F4, nullptr, nullptr);
+  if (!rsa) {
+    std::cerr << "Failed to generate RSA key" << std::endl;
+    return "";
+  }
+
+  BIO *bio = BIO_new(BIO_s_mem());
+  PEM_write_bio_RSAPublicKey(bio, rsa);
+  BUF_MEM *buffer;
+  BIO_get_mem_ptr(bio, &buffer);
+  BIO_set_close(bio, BIO_NOCLOSE);
+  BIO_flush(bio);
+
+  std::string public_key(buffer->data, buffer->length);
+  BIO_free_all(bio);
+  RSA_free(rsa);
+
+  return public_key;
 }
 
 void on_open(connection_hdl hdl) {
-    std::cout << "Connection established with server." << std::endl;
-    client_hdl = hdl;
+  std::cout << "Connection established with server." << std::endl;
+  client_hdl = hdl;
 
-    // Generate RSA key pair
-    std::string public_key = generate_rsa_key();
+  // Generate RSA key pair
+  std::string public_key = generate_rsa_key();
 
-    nlohmann::json hello_message;
-    hello_message["data"]["type"] = "hello";
-    hello_message["data"]["public_key"] = public_key;
+  nlohmann::json hello_message;
+  hello_message["data"]["type"] = "hello";
+  hello_message["data"]["public_key"] = public_key;
+  hello_message["data"]["id"] = username;
 
-    // Send the JSON message
-    client_instance.send(client_hdl, hello_message.dump(), websocketpp::frame::opcode::text);
+  // Send the JSON message
+  client_instance.send(client_hdl, hello_message.dump(),
+                       websocketpp::frame::opcode::text);
 }
 
 void on_message(connection_hdl,
@@ -70,17 +75,37 @@ void client_send_loop() {
         client_instance.close(client_hdl, websocketpp::close::status::normal,
                               "Client closed connection");
         break;  // Exit the loop to stop the client
-      } else{
-        // Otherwise, send the message to the server
-        client_instance.send(client_hdl, message,
-                             websocketpp::frame::opcode::text);
-        std::cout << "Sent to server: " << message << std::endl;
+      } else {
+        // Check if the first word is "chat"
+        std::istringstream iss(message);
+        std::string first_word;
+        iss >> first_word;  // Extract the first word
+
+        if (first_word == "chat") {
+          cout << "chatting" << endl;
+          nlohmann::json chat;
+          chat["data"]["type"] = "chat";
+          chat["chat"]["message"] = "hello lol";
+          client_instance.send(client_hdl, chat.dump(),
+                               websocketpp::frame::opcode::text);
+        } else {
+          // Otherwise, send the message to the server
+          client_instance.send(client_hdl, message,
+                               websocketpp::frame::opcode::text);
+          std::cout << "Sent to server: " << message << std::endl;
+        }
       }
     }
   }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if(argc != 2){
+        cout << "erroneous input" << endl;
+        return 0;
+    } else{
+        username = argv[1];
+    }
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);
