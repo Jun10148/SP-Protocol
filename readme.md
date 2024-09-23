@@ -1,20 +1,18 @@
 to run:
 
 required installations (through terminal):
-sudo apt-get update
-cmake: sudo apt install cmake
-openssl library: sudo apt-get install libssl-dev
-boost: sudo apt-get install libboost-all-dev
+1. > sudo apt-get update
+2. > cmake: sudo apt install cmake
+3. > openssl library: sudo apt-get install libssl-dev
+4. > boost: sudo apt-get install libboost-all-dev
 
 
-delete "CMakeCache.txt"
+Building the project:
 
-cd into "src"
-
-then do:
-cmake ..
-
-make
+1. delete "CMakeCache.txt"
+2. cd into "src"
+3. > cmake ..
+4. > make
 
 In one terminal do
 > ./server
