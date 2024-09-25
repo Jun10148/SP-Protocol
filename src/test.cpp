@@ -1,83 +1,58 @@
-#include <openssl/bio.h>
-#include <openssl/buffer.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/rand.h>
 #include <openssl/rsa.h>
-
+#include <openssl/pem.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
 #include <iostream>
-#include <nlohmann/json.hpp>
-#include <string>
-using namespace std;
 
-std::string sha256(const std::string& data) {
-    cout <<"public key: " << data << endl;
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256(reinterpret_cast<const unsigned char*>(data.c_str()), data.size(),
-         hash);
-
-  std::stringstream ss;
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    ss << std::hex << std::setw(2) << std::setfill('0')
-       << static_cast<int>(hash[i]);
-  }
-  return ss.str();
+RSA* generateRSAKey() {
+    int keyLength = 2048;
+    unsigned long exponent = RSA_F4;  // Commonly used public exponent (65537)
+    
+    // Generate the RSA key
+    RSA* rsa = RSA_new();
+    BIGNUM* bn = BN_new();
+    BN_set_word(bn, exponent);
+    if (RSA_generate_key_ex(rsa, keyLength, bn, NULL) != 1) {
+        std::cerr << "Error generating RSA key\n";
+        RSA_free(rsa);
+        BN_free(bn);
+        return nullptr;
+    }
+    
+    BN_free(bn);
+    return rsa;
 }
 
-std::string base64Encode(const std::string &input) {
-    static const std::string base64Chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz"
-        "0123456789+/";
-    
-    std::string output;
-    int i = 0;
-    unsigned char array3[3];
-    unsigned char array4[4];
+std::string getPrivateKey(RSA* rsa) {
+    BIO* bio = BIO_new(BIO_s_mem());  // Create a memory BIO
 
-    for (size_t j = 0; j < input.size(); j++) {
-        array3[i++] = input[j];
-        if (i == 3) {
-            array4[0] = (array3[0] & 0xfc) >> 2;
-            array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
-            array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
-            array4[3] = array3[2] & 0x3f;
+    // Write the private key to a memory BIO in PEM format
+    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
 
-            for (i = 0; (i < 4); i++) {
-                output += base64Chars[array4[i]];
-            }
-            i = 0;
-        }
-    }
+    // Get the data from the BIO
+    char* keyBuffer = NULL;
+    long keyLength = BIO_get_mem_data(bio, &keyBuffer);
 
-    if (i) {
-        for (int j = i; j < 3; j++) {
-            array3[j] = '\0';
-        }
+    // Copy the private key into a std::string
+    std::string privateKey(keyBuffer, keyLength);
 
-        array4[0] = (array3[0] & 0xfc) >> 2;
-        array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
-        array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
-        array4[3] = array3[2] & 0x3f;
+    // Free the BIO memory
+    BIO_free(bio);
 
-        for (int j = 0; j < i + 1; j++) {
-            output += base64Chars[array4[j]];
-        }
-
-        while ((i++ < 3)) {
-            output += '=';
-        }
-    }
-
-    return output;
+    return privateKey;  // Return the private key as a string
 }
 
 int main() {
-  // Hard-coded message
-  std::string message = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3uYa9ZTguG41RFEK8rhG\neV690Mdji/LyLtP26vuykMPYVUY78K0VRzPBDL3DnZPDw5E3GoyvpQoFc4gL+YwE\nGS6Of6TPYSU4jR2oL+6pkgiAGQk1MblLlHEZixRoirQ7k01w7FLuNnmBi4xKn+++\nsEi0XG7nE24vZjLb/N8f4F9y6UVIypxd8O8Xgm1DH9BLIEuM17LhxQkXTT60hOQ+\nIUVY1PGmy/NrhSSMPuPR4dv9F7iU8iDMJCdoCN2hFW2HF3JozFAPuPVDTxYhudzf\nHdW0j3997H6LPz7o78ah/PuMvxqgTHK20fvxwGV+9l3+rIgSUknUy5lV1nZu4Vb8\nhQIDAQAB\n-----END PUBLIC KEY-----\n";
+    // Generate RSA key
+    RSA* myRSA = generateRSAKey();
+    
+    if (myRSA) {
+        std::cout << "Private Key:\n";
+        std::cout << getPrivateKey(myRSA) << std::endl;
+        
+        // Clean up
+        RSA_free(myRSA);
+    }
 
-  cout << sha256(message) << endl;;
-  cout <<base64Encode(sha256(message)) << endl;
-  return 0;
+    return 0;
 }

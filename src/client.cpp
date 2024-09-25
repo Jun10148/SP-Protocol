@@ -91,6 +91,26 @@ std::string getPublicKey(RSA* rsa) {
 
     return std::string(bufferPtr->data, bufferPtr->length);
 }
+//chatgpt
+std::string getPrivateKey(RSA* rsa) {
+    BIO* bio = BIO_new(BIO_s_mem());  // Create a memory BIO
+
+    // Write the private key to a memory BIO in PEM format
+    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
+
+    // Get the data from the BIO
+    char* keyBuffer = NULL;
+    long keyLength = BIO_get_mem_data(bio, &keyBuffer);
+
+    // Copy the private key into a std::string
+    std::string privateKey(keyBuffer, keyLength);
+
+    // Free the BIO memory
+    BIO_free(bio);
+
+    return privateKey;  // Return the private key as a string
+}
+
 
 std::string sha256(const std::string& data) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -180,8 +200,10 @@ void on_open(connection_hdl hdl) {
   // Generate RSA key pair
   myRSA = generateRSAKey();
   std::string public_key;
+  std::string private_key;
   if (myRSA) {
     public_key = getPublicKey(myRSA);
+    private_key = getPrivateKey(myRSA);
   } else {
     cout << "error: couldnt generate rsa key" << endl;
   }

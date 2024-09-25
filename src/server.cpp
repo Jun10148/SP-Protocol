@@ -41,18 +41,31 @@ ws_server echo_server;
 // std::unordered_map<std::string, std::pair<connection_hdl, std::string>>
 //  clients;  // Map public keys to client handles
 void update(connection_hdl hdl) {
-  nlohmann::json client_update = {{"type", "client_update"},
-                                  {"clients", nlohmann::json::array()}};
+    // Initialize the client_update JSON object
+    nlohmann::json client_update = {{"type", "client_update"},
+                                     {"clients", nlohmann::json::array()}};
 
-  for (const auto& client : server_list[0].clients) {
-    client_update["clients"].push_back(client.public_key);
-  }
-  for (const auto& server : server_list) {
-    for (const auto& client : server.clients)
-      echo_server.send(client.client_hdl, client_update.dump(),
-                       websocketpp::frame::opcode::text);
-  }
+    // Iterate through clients and add their information to the JSON array
+    for (const auto& client : server_list[0].clients) {
+        // Create a JSON object for the client
+        nlohmann::json client_info = {
+            {"client-id", client.client_id},      // Assuming client_id is a member of the client structure
+            {"public-key", client.public_key}     // Assuming public_key is also a member of the client structure
+        };
+
+        // Add the client info to the clients array
+        client_update["clients"].push_back(client_info);
+    }
+
+    // Send the update to all clients in all servers
+    for (const auto& server : server_list) {
+        for (const auto& client : server.clients) {
+            echo_server.send(client.client_hdl, client_update.dump(),
+                             websocketpp::frame::opcode::text);
+        }
+    }
 }
+
 void on_open(connection_hdl hdl) {
   std::cout << "Client connected." << std::endl;
 }
