@@ -23,7 +23,6 @@ ws_client client_instance;
 connection_hdl client_hdl;
 
 std::string username;
-
 class Client {
  public:
   std::string client_id;
@@ -51,6 +50,7 @@ std::vector<Server> server_list;
 RSA* myRSA;
 int counter = 0;
 
+// written by chatgpt
 RSA* generateRSAKey() {
   RSA* newrsa = RSA_generate_key(2048, 65537, nullptr, nullptr);
   if (!newrsa) {
@@ -60,58 +60,59 @@ RSA* generateRSAKey() {
   return newrsa;
 }
 
-//new ver by chatgpt
+// written by chatgpt
 std::string getPublicKey(RSA* rsa) {
-    if (rsa == nullptr) {
-        std::cerr << "RSA key is null" << std::endl;
-        return "";
-    }
+  if (rsa == nullptr) {
+    std::cerr << "RSA key is null" << std::endl;
+    return "";
+  }
 
-    BIO* bio = BIO_new(BIO_s_mem());
-    if (!bio) {
-        std::cerr << "Failed to create BIO" << std::endl;
-        return "";
-    }
+  BIO* bio = BIO_new(BIO_s_mem());
+  if (!bio) {
+    std::cerr << "Failed to create BIO" << std::endl;
+    return "";
+  }
 
-    if (!PEM_write_bio_RSA_PUBKEY(bio, rsa)) {
-        std::cerr << "Failed to write public key" << std::endl;
-        BIO_free(bio);
-        return "";
-    }
-
-    BUF_MEM* bufferPtr;
-    BIO_get_mem_ptr(bio, &bufferPtr);
-    BIO_set_close(bio, BIO_NOCLOSE);
+  if (!PEM_write_bio_RSA_PUBKEY(bio, rsa)) {
+    std::cerr << "Failed to write public key" << std::endl;
     BIO_free(bio);
+    return "";
+  }
 
-    if (bufferPtr == nullptr) {
-        std::cerr << "Failed to get memory pointer" << std::endl;
-        return "";
-    }
+  BUF_MEM* bufferPtr;
+  BIO_get_mem_ptr(bio, &bufferPtr);
+  BIO_set_close(bio, BIO_NOCLOSE);
+  BIO_free(bio);
 
-    return std::string(bufferPtr->data, bufferPtr->length);
+  if (bufferPtr == nullptr) {
+    std::cerr << "Failed to get memory pointer" << std::endl;
+    return "";
+  }
+
+  return std::string(bufferPtr->data, bufferPtr->length);
 }
-//chatgpt
+
+// written by chatgpt
 std::string getPrivateKey(RSA* rsa) {
-    BIO* bio = BIO_new(BIO_s_mem());  // Create a memory BIO
+  BIO* bio = BIO_new(BIO_s_mem());  // Create a memory BIO
 
-    // Write the private key to a memory BIO in PEM format
-    PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
+  // Write the private key to a memory BIO in PEM format
+  PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
 
-    // Get the data from the BIO
-    char* keyBuffer = NULL;
-    long keyLength = BIO_get_mem_data(bio, &keyBuffer);
+  // Get the data from the BIO
+  char* keyBuffer = NULL;
+  long keyLength = BIO_get_mem_data(bio, &keyBuffer);
 
-    // Copy the private key into a std::string
-    std::string privateKey(keyBuffer, keyLength);
+  // Copy the private key into a std::string
+  std::string privateKey(keyBuffer, keyLength);
 
-    // Free the BIO memory
-    BIO_free(bio);
+  // Free the BIO memory
+  BIO_free(bio);
 
-    return privateKey;  // Return the private key as a string
+  return privateKey;  // Return the private key as a string
 }
 
-
+// written by chatgpt
 std::string sha256(const std::string& data) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256(reinterpret_cast<const unsigned char*>(data.c_str()), data.size(),
@@ -125,7 +126,7 @@ std::string sha256(const std::string& data) {
   return ss.str();
 }
 
-// written by chatgpt (checked if it works with openssl command output vs this)
+// written by chatgpt
 std::string base64Encode(const std::string& input) {
   static const std::string base64Chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -174,6 +175,45 @@ std::string base64Encode(const std::string& input) {
   return output;
 }
 
+// written by chatgpt
+std::string decode_base64(const std::string& base64_str) {
+  static const std::string base64_chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      "abcdefghijklmnopqrstuvwxyz"
+      "0123456789+/";
+  size_t in_len = base64_str.size();
+  if (in_len % 4 != 0)
+    throw std::invalid_argument("Invalid base64 string length");
+
+  size_t padding = 0;
+  if (base64_str[in_len - 1] == '=') padding++;
+  if (base64_str[in_len - 2] == '=') padding++;
+
+  size_t out_len = (in_len / 4) * 3 - padding;
+  std::string decoded_string(out_len, '\0');
+
+  for (size_t i = 0, j = 0; i < in_len;) {
+    uint32_t a = base64_chars.find(base64_str[i++]);
+    uint32_t b = base64_chars.find(base64_str[i++]);
+    uint32_t c = base64_chars.find(base64_str[i++]);
+    uint32_t d = base64_chars.find(base64_str[i++]);
+
+    if (a == std::string::npos || b == std::string::npos ||
+        c == std::string::npos || d == std::string::npos) {
+      throw std::invalid_argument("Invalid base64 string");
+    }
+
+    uint32_t decoded_value = (a << 18) | (b << 12) | (c << 6) | d;
+
+    if (j < out_len) decoded_string[j++] = (decoded_value >> 16) & 0xFF;
+    if (j < out_len) decoded_string[j++] = (decoded_value >> 8) & 0xFF;
+    if (j < out_len) decoded_string[j++] = decoded_value & 0xFF;
+  }
+
+  return decoded_string;
+}
+
+// written by chatgpt
 std::string getPublicKeyFingerprint(RSA* rsa) {
   // Convert RSA public key to PEM format
   BIO* bio = BIO_new(BIO_s_mem());
@@ -249,12 +289,15 @@ void on_message(connection_hdl,
 
         server_list.push_back(server);
       }
-    } else if (json["data"]["type"] == "public_chat"){
-        cout << "public chat from: " << json["data"]["sender"] << endl;
-        cout << json["data"]["message"] << endl;
-    } 
-    else {
-      // std::cout << "Received message: " << payload << std::endl;
+    } else if (json["data"]["type"] == "public_chat") {
+      cout << "public chat from: " << json["data"]["sender"] << endl;
+      cout << json["data"]["message"] << endl;
+    }
+     else if (json["type"] == "Welcome") {
+      string myname = json["client_id"];
+      cout << "Welcome client: " << myname << endl;
+    } else if (username == "admin"){
+      std::cout << "Received message: " << payload << std::endl;
     }
   } catch (const nlohmann::json::parse_error& e) {
     std::cerr << "JSON parse error: " << e.what() << std::endl;
@@ -310,12 +353,13 @@ void client_send_loop() {
           public_chat["data"]["message"] = text;
 
           public_chat["type"] = "signed_data";
-          
+
           public_chat["counter"] = counter;
 
           string plain_signature =
               public_chat["data"].dump() + to_string(counter);
-          public_chat["signature"] = base64Encode(plain_signature); //not a real signature
+          public_chat["signature"] =
+              base64Encode(plain_signature);  // not a real signature
 
           client_instance.send(client_hdl, public_chat.dump(),
                                websocketpp::frame::opcode::text);
