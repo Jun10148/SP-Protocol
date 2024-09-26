@@ -53,9 +53,11 @@ int counter = 0;
 std::string privateKeyFile;
 std::string publicKeyFile;
 std::string publicKeyFingerprintFile;
+std::string SignatureFile;
 std::string private_key;
 std::string public_key;
 std::string publicKeyFingerprint;
+std::string signature;
 
 int generate_keys() {
   // Construct the OpenSSL command for generating the private key
@@ -81,14 +83,23 @@ std::string readStringFromFile(const std::string& filename) {
   if (inFile.is_open()) {
     buffer << inFile.rdbuf();  // Read file content into stringstream
     inFile.close();
-    return buffer.str();  // Return the content as a string
+
+    // Get the content as a string
+    std::string content = buffer.str();
+
+    // Remove trailing whitespace characters (including \n)
+    content.erase(
+        std::remove_if(content.end() - 1, content.end(),
+                       [](unsigned char x) { return std::isspace(x); }),
+        content.end());
+
+    return content;  // Return the cleaned content as a string
   } else {
     std::cerr << "Error: Unable to open file for reading: " << filename
               << std::endl;
     return "";
   }
 }
-
 void writeStringToFile(const std::string& filename,
                        const std::string& content) {
   std::ofstream outFile(filename);
@@ -96,119 +107,31 @@ void writeStringToFile(const std::string& filename,
   if (outFile.is_open()) {
     outFile << content;
     outFile.close();
-    std::cout << "Successfully wrote string to file: " << filename << std::endl;
   } else {
     std::cerr << "Error: Unable to open file for writing: " << filename
               << std::endl;
   }
 }
-// written by chatgpt
-std::string sha256(const std::string& data) {
-  unsigned char hash[SHA256_DIGEST_LENGTH];
-  SHA256(reinterpret_cast<const unsigned char*>(data.c_str()), data.size(),
-         hash);
 
-  std::stringstream ss;
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    ss << std::hex << std::setw(2) << std::setfill('0')
-       << static_cast<int>(hash[i]);
-  }
-  return ss.str();
-}
-
-// written by chatgpt
-std::string base64Encode(const std::string& input) {
-  static const std::string base64Chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz"
-      "0123456789+/";
-
-  std::string output;
-  int i = 0;
-  unsigned char array3[3];
-  unsigned char array4[4];
-
-  for (size_t j = 0; j < input.size(); j++) {
-    array3[i++] = input[j];
-    if (i == 3) {
-      array4[0] = (array3[0] & 0xfc) >> 2;
-      array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
-      array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
-      array4[3] = array3[2] & 0x3f;
-
-      for (i = 0; (i < 4); i++) {
-        output += base64Chars[array4[i]];
-      }
-      i = 0;
-    }
-  }
-
-  if (i) {
-    for (int j = i; j < 3; j++) {
-      array3[j] = '\0';
-    }
-
-    array4[0] = (array3[0] & 0xfc) >> 2;
-    array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
-    array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
-    array4[3] = array3[2] & 0x3f;
-
-    for (int j = 0; j < i + 1; j++) {
-      output += base64Chars[array4[j]];
-    }
-
-    while ((i++ < 3)) {
-      output += '=';
-    }
-  }
-
-  return output;
-}
-
-// written by chatgpt
-std::string decode_base64(const std::string& base64_str) {
-  static const std::string base64_chars =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "abcdefghijklmnopqrstuvwxyz"
-      "0123456789+/";
-  size_t in_len = base64_str.size();
-  if (in_len % 4 != 0)
-    throw std::invalid_argument("Invalid base64 string length");
-
-  size_t padding = 0;
-  if (base64_str[in_len - 1] == '=') padding++;
-  if (base64_str[in_len - 2] == '=') padding++;
-
-  size_t out_len = (in_len / 4) * 3 - padding;
-  std::string decoded_string(out_len, '\0');
-
-  for (size_t i = 0, j = 0; i < in_len;) {
-    uint32_t a = base64_chars.find(base64_str[i++]);
-    uint32_t b = base64_chars.find(base64_str[i++]);
-    uint32_t c = base64_chars.find(base64_str[i++]);
-    uint32_t d = base64_chars.find(base64_str[i++]);
-
-    if (a == std::string::npos || b == std::string::npos ||
-        c == std::string::npos || d == std::string::npos) {
-      throw std::invalid_argument("Invalid base64 string");
-    }
-
-    uint32_t decoded_value = (a << 18) | (b << 12) | (c << 6) | d;
-
-    if (j < out_len) decoded_string[j++] = (decoded_value >> 16) & 0xFF;
-    if (j < out_len) decoded_string[j++] = (decoded_value >> 8) & 0xFF;
-    if (j < out_len) decoded_string[j++] = decoded_value & 0xFF;
-  }
-
-  return decoded_string;
-}
-
-// written by chatgpt
 void getPublicKeyFingerprint() {
-    std::string command = "echo -n \"" + public_key + "\" | openssl dgst -sha256 > " + publicKeyFingerprintFile;
+  std::string command = "openssl dgst -sha256 -binary " + publicKeyFile +
+                        " | openssl base64 -out " + publicKeyFingerprintFile;
+  // Execute the command
+  system(command.c_str());
+}
 
-    // Execute the command
-    system(command.c_str());
+void signDataWithPSS() {
+  // Step 1: Sign the data + counter with RSA-PSS and SHA-256
+  std::string signCommand =
+      "openssl dgst -sha256 -sigopt rsa_padding_mode:pss -sigopt "
+      "rsa_pss_saltlen:32 -sign " +
+      privateKeyFile + " -out signature.bin data_counter.txt";
+  system(signCommand.c_str());
+
+  // Step 2: Base64-encode the signature
+  std::string base64EncodeCommand =
+      "openssl base64 -in signature.bin -out " + SignatureFile;
+  system(base64EncodeCommand.c_str());
 }
 
 void on_open(connection_hdl hdl) {
@@ -262,12 +185,14 @@ void on_message(connection_hdl,
         server_list.push_back(server);
       }
     } else if (json["data"]["type"] == "public_chat") {
-      cout << "public chat from: " << json["data"]["sender"] << endl;
+      std::string sender = json["data"]["sender"];
+      cout << "public chat from: " << sender << endl;
       cout << json["data"]["message"] << endl;
     } else if (json["type"] == "Welcome") {
       string myname = json["client_id"];
       cout << "Welcome client: " << myname << endl;
-    } else if (username == "admin") {
+    }
+    if (username == "admin") {
       std::cout << "Received message: " << payload << std::endl;
     }
   } catch (const nlohmann::json::parse_error& e) {
@@ -279,7 +204,7 @@ void client_send_loop() {
   std::string message;
   while (true) {
     std::getline(std::cin, message);
-
+    counter++;
     // Check if the connection handle is valid and not empty
     if (!message.empty() && client_hdl.lock()) {
       // If the user types "exit", close the connection and break the loop
@@ -308,7 +233,6 @@ void client_send_loop() {
 
           getPublicKeyFingerprint();
           publicKeyFingerprint = readStringFromFile(publicKeyFingerprintFile);
-          publicKeyFingerprint = base64Encode(publicKeyFingerprint);
           public_chat["data"]["sender"] = publicKeyFingerprint;
 
           string text = "";
@@ -328,10 +252,15 @@ void client_send_loop() {
 
           public_chat["counter"] = counter;
 
-          string plain_signature =
-              public_chat["data"].dump() + to_string(counter);
-          public_chat["signature"] =
-              base64Encode(plain_signature);  // not a real signature
+          string plain_signature = public_chat["data"].dump();
+          cout << plain_signature << endl;
+          plain_signature = plain_signature + to_string(counter);
+
+          writeStringToFile("data_counter.txt", plain_signature);
+
+          signDataWithPSS();
+          signature = readStringFromFile(SignatureFile);
+          public_chat["signature"] = signature;
 
           client_instance.send(client_hdl, public_chat.dump(),
                                websocketpp::frame::opcode::text);
@@ -363,6 +292,7 @@ int main(int argc, char* argv[]) {
   privateKeyFile = "private_key-" + username + ".pem";
   publicKeyFile = "public_key-" + username + ".pem";
   publicKeyFingerprintFile = "public_key_fingerprint-" + username + ".pem";
+  SignatureFile = "signature-" + username + ".txt";
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);
