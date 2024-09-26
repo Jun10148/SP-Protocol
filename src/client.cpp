@@ -50,10 +50,14 @@ class Server {
 std::vector<Server> server_list;
 RSA* myRSA;
 int counter = 0;
+
 std::string privateKeyFile;
 std::string publicKeyFile;
 std::string publicKeyFingerprintFile;
 std::string SignatureFile;
+std::string bufferinFile;
+std::string bufferoutFile;
+
 std::string private_key;
 std::string public_key;
 std::string publicKeyFingerprint;
@@ -83,23 +87,14 @@ std::string readStringFromFile(const std::string& filename) {
   if (inFile.is_open()) {
     buffer << inFile.rdbuf();  // Read file content into stringstream
     inFile.close();
-
-    // Get the content as a string
-    std::string content = buffer.str();
-
-    // Remove trailing whitespace characters (including \n)
-    content.erase(
-        std::remove_if(content.end() - 1, content.end(),
-                       [](unsigned char x) { return std::isspace(x); }),
-        content.end());
-
-    return content;  // Return the cleaned content as a string
+    return buffer.str();  // Return the content as a string
   } else {
     std::cerr << "Error: Unable to open file for reading: " << filename
               << std::endl;
     return "";
   }
 }
+
 void writeStringToFile(const std::string& filename,
                        const std::string& content) {
   std::ofstream outFile(filename);
@@ -147,6 +142,15 @@ void on_open(connection_hdl hdl) {
   hello_message["data"]["type"] = "hello";
   hello_message["data"]["public_key"] = public_key;
   hello_message["data"]["id"] = username;
+  hello_message["counter"] = counter;
+  hello_message["type"] = "signed_data";
+
+  string plain_signature = hello_message["data"].dump();
+  plain_signature = plain_signature + to_string(counter);
+  writeStringToFile("data_counter.txt", plain_signature);
+  signDataWithPSS();
+  signature = readStringFromFile(SignatureFile);
+  hello_message["signature"] = signature;
 
   // Send the JSON message
   client_instance.send(client_hdl, hello_message.dump(),
@@ -186,6 +190,21 @@ void on_message(connection_hdl,
       }
     } else if (json["data"]["type"] == "public_chat") {
       std::string sender = json["data"]["sender"];
+      std::string text = json["data"]["message"];
+      for (const auto& server : server_list) {
+        for (const auto& client : server.clients) {
+          writeStringToFile(bufferinFile, client.public_key);
+          std::string command = "openssl dgst -sha256 -binary " +
+                                bufferinFile + " | openssl base64 -out " +
+                                bufferoutFile;
+          system(command.c_str());
+          std::string result = readStringFromFile(bufferoutFile);
+          if(result == sender){
+            sender = client.client_id;
+            break;
+          }
+        }
+      }
       cout << "public chat from: " << sender << endl;
       cout << json["data"]["message"] << endl;
     } else if (json["type"] == "Welcome") {
@@ -253,7 +272,6 @@ void client_send_loop() {
           public_chat["counter"] = counter;
 
           string plain_signature = public_chat["data"].dump();
-          cout << plain_signature << endl;
           plain_signature = plain_signature + to_string(counter);
 
           writeStringToFile("data_counter.txt", plain_signature);
@@ -292,7 +310,9 @@ int main(int argc, char* argv[]) {
   privateKeyFile = "private_key-" + username + ".pem";
   publicKeyFile = "public_key-" + username + ".pem";
   publicKeyFingerprintFile = "public_key_fingerprint-" + username + ".pem";
-  SignatureFile = "signature-" + username + ".txt";
+  SignatureFile = "signature-" + username + ".pem";
+  bufferinFile = "buffer_in-" + username + ".pem";
+  bufferoutFile = "buffer_out-" + username + ".pem";
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);

@@ -1,1 +1,1 @@
-{"message":"hello","sender":"+a11kN59nurvDdj1+O5C86sAiltLdTVRwDZ+dL1PWpQ=","type":"public_chat"}1
+{"message":"hello","sender":"b1wkTizEnKfSbpOQnJ1NyPPV2oVfrOyv/OFir91pUlw=\n","type":"public_chat"}2
