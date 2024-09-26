@@ -4,6 +4,7 @@
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
 
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -49,69 +50,58 @@ class Server {
 std::vector<Server> server_list;
 RSA* myRSA;
 int counter = 0;
+std::string privateKeyFile;
+std::string publicKeyFile;
+std::string publicKeyFingerprintFile;
+std::string private_key;
+std::string public_key;
+std::string publicKeyFingerprint;
 
-// written by chatgpt
-RSA* generateRSAKey() {
-  RSA* newrsa = RSA_generate_key(2048, 65537, nullptr, nullptr);
-  if (!newrsa) {
-    std::cerr << "Failed to generate RSA key" << std::endl;
-    return nullptr;
-  }
-  return newrsa;
+int generate_keys() {
+  // Construct the OpenSSL command for generating the private key
+  std::string genPrivateKeyCmd =
+      "openssl genpkey -algorithm RSA -out " + privateKeyFile +
+      " -pkeyopt rsa_keygen_bits:2048 -pkeyopt rsa_keygen_pubexp:65537" +
+      " > NUL 2>&1";
+
+  // Call the command using system()
+  system(genPrivateKeyCmd.c_str());
+  std::string genPublicKeyCmd = "openssl rsa -in " + privateKeyFile +
+                                " -pubout -out " + publicKeyFile +
+                                " > NUL 2>&1";
+  system(genPublicKeyCmd.c_str());
+
+  return 0;
 }
 
-// written by chatgpt
-std::string getPublicKey(RSA* rsa) {
-  if (rsa == nullptr) {
-    std::cerr << "RSA key is null" << std::endl;
+std::string readStringFromFile(const std::string& filename) {
+  std::ifstream inFile(filename);
+  std::stringstream buffer;
+
+  if (inFile.is_open()) {
+    buffer << inFile.rdbuf();  // Read file content into stringstream
+    inFile.close();
+    return buffer.str();  // Return the content as a string
+  } else {
+    std::cerr << "Error: Unable to open file for reading: " << filename
+              << std::endl;
     return "";
   }
-
-  BIO* bio = BIO_new(BIO_s_mem());
-  if (!bio) {
-    std::cerr << "Failed to create BIO" << std::endl;
-    return "";
-  }
-
-  if (!PEM_write_bio_RSA_PUBKEY(bio, rsa)) {
-    std::cerr << "Failed to write public key" << std::endl;
-    BIO_free(bio);
-    return "";
-  }
-
-  BUF_MEM* bufferPtr;
-  BIO_get_mem_ptr(bio, &bufferPtr);
-  BIO_set_close(bio, BIO_NOCLOSE);
-  BIO_free(bio);
-
-  if (bufferPtr == nullptr) {
-    std::cerr << "Failed to get memory pointer" << std::endl;
-    return "";
-  }
-
-  return std::string(bufferPtr->data, bufferPtr->length);
 }
 
-// written by chatgpt
-std::string getPrivateKey(RSA* rsa) {
-  BIO* bio = BIO_new(BIO_s_mem());  // Create a memory BIO
+void writeStringToFile(const std::string& filename,
+                       const std::string& content) {
+  std::ofstream outFile(filename);
 
-  // Write the private key to a memory BIO in PEM format
-  PEM_write_bio_RSAPrivateKey(bio, rsa, NULL, NULL, 0, NULL, NULL);
-
-  // Get the data from the BIO
-  char* keyBuffer = NULL;
-  long keyLength = BIO_get_mem_data(bio, &keyBuffer);
-
-  // Copy the private key into a std::string
-  std::string privateKey(keyBuffer, keyLength);
-
-  // Free the BIO memory
-  BIO_free(bio);
-
-  return privateKey;  // Return the private key as a string
+  if (outFile.is_open()) {
+    outFile << content;
+    outFile.close();
+    std::cout << "Successfully wrote string to file: " << filename << std::endl;
+  } else {
+    std::cerr << "Error: Unable to open file for writing: " << filename
+              << std::endl;
+  }
 }
-
 // written by chatgpt
 std::string sha256(const std::string& data) {
   unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -214,23 +204,11 @@ std::string decode_base64(const std::string& base64_str) {
 }
 
 // written by chatgpt
-std::string getPublicKeyFingerprint(RSA* rsa) {
-  // Convert RSA public key to PEM format
-  BIO* bio = BIO_new(BIO_s_mem());
-  PEM_write_bio_RSA_PUBKEY(bio, rsa);
+void getPublicKeyFingerprint() {
+    std::string command = "echo -n \"" + public_key + "\" | openssl dgst -sha256 > " + publicKeyFingerprintFile;
 
-  // Get the PEM formatted public key
-  char* pemData;
-  long pemLength = BIO_get_mem_data(bio, &pemData);
-  std::string publicKeyPem(pemData, pemLength);
-
-  // Compute the SHA-256 fingerprint
-  std::string fingerprint = sha256(publicKeyPem);
-
-  // Clean up
-  BIO_free(bio);
-
-  return fingerprint;
+    // Execute the command
+    system(command.c_str());
 }
 
 void on_open(connection_hdl hdl) {
@@ -238,15 +216,9 @@ void on_open(connection_hdl hdl) {
   client_hdl = hdl;
 
   // Generate RSA key pair
-  myRSA = generateRSAKey();
-  std::string public_key;
-  std::string private_key;
-  if (myRSA) {
-    public_key = getPublicKey(myRSA);
-    private_key = getPrivateKey(myRSA);
-  } else {
-    cout << "error: couldnt generate rsa key" << endl;
-  }
+  generate_keys();
+  private_key = readStringFromFile(privateKeyFile);
+  public_key = readStringFromFile(publicKeyFile);
 
   nlohmann::json hello_message;
   hello_message["data"]["type"] = "hello";
@@ -292,11 +264,10 @@ void on_message(connection_hdl,
     } else if (json["data"]["type"] == "public_chat") {
       cout << "public chat from: " << json["data"]["sender"] << endl;
       cout << json["data"]["message"] << endl;
-    }
-     else if (json["type"] == "Welcome") {
+    } else if (json["type"] == "Welcome") {
       string myname = json["client_id"];
       cout << "Welcome client: " << myname << endl;
-    } else if (username == "admin"){
+    } else if (username == "admin") {
       std::cout << "Received message: " << payload << std::endl;
     }
   } catch (const nlohmann::json::parse_error& e) {
@@ -335,9 +306,10 @@ void client_send_loop() {
           nlohmann::json public_chat;
           public_chat["data"]["type"] = "public_chat";
 
-          std::string fingerprint = getPublicKeyFingerprint(myRSA);
-          fingerprint = base64Encode(fingerprint);
-          public_chat["data"]["sender"] = fingerprint;
+          getPublicKeyFingerprint();
+          publicKeyFingerprint = readStringFromFile(publicKeyFingerprintFile);
+          publicKeyFingerprint = base64Encode(publicKeyFingerprint);
+          public_chat["data"]["sender"] = publicKeyFingerprint;
 
           string text = "";
           for (int i = 0; i < message.length(); i++) {
@@ -388,6 +360,9 @@ int main(int argc, char* argv[]) {
   } else {
     username = argv[1];
   }
+  privateKeyFile = "private_key-" + username + ".pem";
+  publicKeyFile = "public_key-" + username + ".pem";
+  publicKeyFingerprintFile = "public_key_fingerprint-" + username + ".pem";
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);
