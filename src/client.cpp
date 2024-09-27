@@ -57,24 +57,28 @@ std::string publicKeyFingerprintFile;
 std::string SignatureFile;
 std::string bufferinFile;
 std::string bufferoutFile;
+std::string initialisationVectorFile;
+std::string aesKeyFile;
 
 std::string private_key;
 std::string public_key;
 std::string publicKeyFingerprint;
 std::string signature;
+std::string initialisationVector;
+std::string aesKey;
 
 int generate_keys() {
   // Construct the OpenSSL command for generating the private key
   std::string genPrivateKeyCmd =
       "openssl genpkey -algorithm RSA -out " + privateKeyFile +
       " -pkeyopt rsa_keygen_bits:2048 -pkeyopt rsa_keygen_pubexp:65537" +
-      " > NUL 2>&1";
+      " > cache/NUL 2>&1";
 
   // Call the command using system()
   system(genPrivateKeyCmd.c_str());
   std::string genPublicKeyCmd = "openssl rsa -in " + privateKeyFile +
                                 " -pubout -out " + publicKeyFile +
-                                " > NUL 2>&1";
+                                " > cache/NUL 2>&1";
   system(genPublicKeyCmd.c_str());
 
   return 0;
@@ -120,12 +124,12 @@ void signDataWithPSS() {
   std::string signCommand =
       "openssl dgst -sha256 -sigopt rsa_padding_mode:pss -sigopt "
       "rsa_pss_saltlen:32 -sign " +
-      privateKeyFile + " -out signature.bin cache/data_counter.txt";
+      privateKeyFile + " -out cache/signature.bin cache/data_counter.txt";
   system(signCommand.c_str());
 
   // Step 2: Base64-encode the signature
   std::string base64EncodeCommand =
-      "openssl base64 -in signature.bin -out " + SignatureFile;
+      "openssl base64 -in cache/signature.bin -out " + SignatureFile;
   system(base64EncodeCommand.c_str());
 }
 
@@ -141,7 +145,7 @@ void on_open(connection_hdl hdl) {
                        websocketpp::frame::opcode::text);
 }
 
-void send_hello(){
+void send_hello() {
   // Generate RSA key pair
   generate_keys();
   private_key = readStringFromFile(privateKeyFile);
@@ -156,7 +160,7 @@ void send_hello(){
 
   string plain_signature = hello_message["data"].dump();
   plain_signature = plain_signature + to_string(counter);
-  writeStringToFile("data_counter.txt", plain_signature);
+  writeStringToFile("cache/data_counter.txt", plain_signature);
   signDataWithPSS();
   signature = readStringFromFile(SignatureFile);
   hello_message["signature"] = signature;
@@ -194,29 +198,26 @@ void on_message(connection_hdl,
         for (const auto& client : server.clients) {
           cout << client.client_id << endl;
         }
-
-        server_list.push_back(server);
       }
-    } else if (json["type"] == "init"){
-      if(json["result"] == "exists"){
-        cout << "The client name already exists, please choose another name" << endl;
+    } else if (json["type"] == "init") {
+      if (json["result"] == "exists") {
+        cout << "The client name already exists, please choose another name"
+             << endl;
         exit(1);
-      } else{
+      } else {
         send_hello();
       }
-    } 
-    else if (json["data"]["type"] == "public_chat") {
+    } else if (json["data"]["type"] == "public_chat") {
       std::string sender = json["data"]["sender"];
       std::string text = json["data"]["message"];
       for (const auto& server : server_list) {
         for (const auto& client : server.clients) {
           writeStringToFile(bufferinFile, client.public_key);
-          std::string command = "openssl dgst -sha256 -binary " +
-                                bufferinFile + " | openssl base64 -out " +
-                                bufferoutFile;
+          std::string command = "openssl dgst -sha256 -binary " + bufferinFile +
+                                " | openssl base64 -out " + bufferoutFile;
           system(command.c_str());
           std::string result = readStringFromFile(bufferoutFile);
-          if(result == sender){
+          if (result == sender) {
             sender = client.client_id;
             break;
           }
@@ -224,9 +225,11 @@ void on_message(connection_hdl,
       }
       cout << "public chat from: " << sender << endl;
       cout << json["data"]["message"] << endl;
-    } else if (json["type"] == "Welcome") {
+    } else if (json["data"]["type"] == "Welcome") {
       string myname = json["client_id"];
       cout << "Welcome client: " << myname << endl;
+    } else if (json["data"]["type"] == "chat") {
+      cout << json << endl;
     }
     if (username == "admin") {
       std::cout << "Received message: " << payload << std::endl;
@@ -256,12 +259,90 @@ void client_send_loop() {
         iss >> first_word;  // Extract the first word
 
         if (first_word == "send_message") {
-          unsigned char aesKey[32];
-          unsigned char iv[16];
-          RAND_bytes(aesKey, sizeof(aesKey));
-          RAND_bytes(iv, sizeof(iv));
+          // generate aes IV
+          std::string cmd =
+              "openssl rand -base64 16 > " + initialisationVectorFile;
+          system(cmd.c_str());
 
-          client_instance.send(client_hdl, "sup",
+          cmd = "openssl rand -base64 32 > " + aesKeyFile;
+          system(cmd.c_str());
+
+          string word;
+          vector<string> receivers;
+          string last_word;
+          while (iss >> word) {
+            if (!last_word.empty()) {
+              receivers.push_back(last_word);
+            }
+            last_word = word;
+          }
+          vector<string> servername;
+          vector<string> receivername;
+          for (const auto& receiver : receivers) {
+            int it = 0;
+            string first;
+            string second;
+            while (receiver[it] != '-' && it < receiver.length()) {
+              first = first + receiver[it];
+              it++;
+            }
+            it++;
+            while (it < receiver.length()) {
+              second = second + receiver[it];
+              it++;
+            }
+            servername.push_back(first);
+            receivername.push_back(second);
+          }
+          vector<string> pubkeys;
+
+          for (const auto& server : server_list) {
+            string receiving_server = server.server_id;
+            for (const auto& client : server.clients) {
+              string receiving_user = client.client_id;
+              for (int i = 0; i < receivername.size(); i++) {
+                if (receiving_server == servername[i] &&
+                    receiving_user == receivername[i]) {
+                  pubkeys.push_back(client.public_key);
+                  break;
+                }
+              }
+            }
+          }
+          nlohmann::json chat;
+          vector<string> fingerprints;
+          string msg;
+          for (const auto& key : pubkeys) {
+            writeStringToFile(bufferinFile, key);
+            writeStringToFile(bufferoutFile, key);
+            std::string cmd = "openssl dgst -sha256 -binary " + bufferinFile +
+                              " | openssl base64 -out " + bufferoutFile;
+            system(cmd.c_str());
+            fingerprints.push_back(readStringFromFile(bufferoutFile));
+          }
+          chat["participants"] = fingerprints;
+
+          string text = "";
+          for (int i = 0; i < message.length(); i++) {
+            if (message[i] == '"') {
+              int j = i + 1;
+              while (message[j] != '"' && j < message.length()) {
+                text = text + message[j];
+                j++;
+              }
+              break;
+            }
+          }
+          chat["message"] = text;
+
+          nlohmann::json priv_msg;
+          priv_msg["data"]["type"] = "chat";
+          priv_msg["data"]["chat"] = chat;
+          priv_msg["data"]["client-info"]["client-id"] = username;
+          priv_msg["data"]["client-info"]["server-id"] =
+              server_list[0].server_id;
+
+          client_instance.send(client_hdl, priv_msg.dump(),
                                websocketpp::frame::opcode::text);
         } else if (first_word == "public_chat") {
           nlohmann::json public_chat;
@@ -291,7 +372,7 @@ void client_send_loop() {
           string plain_signature = public_chat["data"].dump();
           plain_signature = plain_signature + to_string(counter);
 
-          writeStringToFile("data_counter.txt", plain_signature);
+          writeStringToFile("cache/data_counter.txt", plain_signature);
 
           signDataWithPSS();
           signature = readStringFromFile(SignatureFile);
@@ -326,10 +407,13 @@ int main(int argc, char* argv[]) {
   }
   privateKeyFile = "cache/private_key-" + username + ".pem";
   publicKeyFile = "cache/public_key-" + username + ".pem";
-  publicKeyFingerprintFile = "cache/public_key_fingerprint-" + username + ".pem";
+  publicKeyFingerprintFile =
+      "cache/public_key_fingerprint-" + username + ".pem";
   SignatureFile = "cache/signature-" + username + ".pem";
   bufferinFile = "cache/buffer_in-" + username + ".pem";
   bufferoutFile = "cache/buffer_out-" + username + ".pem";
+  initialisationVectorFile = "cache/iv-" + username + ".txt";
+  aesKeyFile = "cache/aes_key-" + username + ".txt";
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);

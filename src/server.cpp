@@ -27,6 +27,7 @@ class Server {
   std::string address;
   std::string server_id;
   std::vector<Client> clients;
+  connection_hdl server_hdl;
 
   Server(const std::string& address, const std::string& server_id)
       : address(address), server_id(server_id) {}
@@ -99,7 +100,7 @@ void on_message(connection_hdl hdl,
                 << server_list[0].clients.back().client_id << std::endl;
       // send a welcome message back to the client
       nlohmann::json client_welcome = {{"type", "client_id"}};
-      client_welcome["type"] = "Welcome";
+      client_welcome["data"]["type"] = "Welcome";
       client_welcome["client_id"] = server_list[0].clients.back().client_id;
       echo_server.send(hdl, client_welcome.dump(),
                        websocketpp::frame::opcode::text);
@@ -123,7 +124,11 @@ void on_message(connection_hdl hdl,
       echo_server.send(hdl, reply.dump(), websocketpp::frame::opcode::text);
     } else if (json["data"]["type"] == "chat") {
       // Handle other message types
-      std::cout << "Received message: " << json["chat"]["message"] << std::endl;
+      for(const auto& server : server_list){
+        for(const auto& client : server.clients){
+          echo_server.send(hdl, json.dump(), websocketpp::frame::opcode::text);
+        }
+      }
     } else if (json["type"] == "client_list_request") {
       // sending client_list message to all clients
       nlohmann::json client_update = {{"type", "client_list"},
@@ -159,6 +164,7 @@ void on_message(connection_hdl hdl,
     } else {
       std::cout << "Received message: " << payload << std::endl;
     }
+    std::cout << "Received message: " << payload << std::endl;
   } catch (const nlohmann::json::parse_error& e) {
     std::cerr << "JSON parse error: " << e.what() << std::endl;
   }
@@ -183,7 +189,7 @@ void server_send_loop() {
 }
 
 int main() {
-  server_list.push_back(Server("localhost", "server-001"));
+  server_list.push_back(Server("localhost", "server1"));
   echo_server.clear_access_channels(websocketpp::log::alevel::all);
   echo_server.clear_error_channels(websocketpp::log::elevel::all);
 
