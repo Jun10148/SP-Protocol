@@ -120,7 +120,7 @@ void signDataWithPSS() {
   std::string signCommand =
       "openssl dgst -sha256 -sigopt rsa_padding_mode:pss -sigopt "
       "rsa_pss_saltlen:32 -sign " +
-      privateKeyFile + " -out signature.bin data_counter.txt";
+      privateKeyFile + " -out signature.bin cache/data_counter.txt";
   system(signCommand.c_str());
 
   // Step 2: Base64-encode the signature
@@ -133,6 +133,15 @@ void on_open(connection_hdl hdl) {
   std::cout << "Connection established with server." << std::endl;
   client_hdl = hdl;
 
+  nlohmann::json init;
+  init["type"] = "init";
+  init["name"] = username;
+  // Send the JSON message
+  client_instance.send(client_hdl, init.dump(),
+                       websocketpp::frame::opcode::text);
+}
+
+void send_hello(){
   // Generate RSA key pair
   generate_keys();
   private_key = readStringFromFile(privateKeyFile);
@@ -188,7 +197,15 @@ void on_message(connection_hdl,
 
         server_list.push_back(server);
       }
-    } else if (json["data"]["type"] == "public_chat") {
+    } else if (json["type"] == "init"){
+      if(json["result"] == "exists"){
+        cout << "The client name already exists, please choose another name" << endl;
+        exit(1);
+      } else{
+        send_hello();
+      }
+    } 
+    else if (json["data"]["type"] == "public_chat") {
       std::string sender = json["data"]["sender"];
       std::string text = json["data"]["message"];
       for (const auto& server : server_list) {
@@ -307,12 +324,12 @@ int main(int argc, char* argv[]) {
   } else {
     username = argv[1];
   }
-  privateKeyFile = "private_key-" + username + ".pem";
-  publicKeyFile = "public_key-" + username + ".pem";
-  publicKeyFingerprintFile = "public_key_fingerprint-" + username + ".pem";
-  SignatureFile = "signature-" + username + ".pem";
-  bufferinFile = "buffer_in-" + username + ".pem";
-  bufferoutFile = "buffer_out-" + username + ".pem";
+  privateKeyFile = "cache/private_key-" + username + ".pem";
+  publicKeyFile = "cache/public_key-" + username + ".pem";
+  publicKeyFingerprintFile = "cache/public_key_fingerprint-" + username + ".pem";
+  SignatureFile = "cache/signature-" + username + ".pem";
+  bufferinFile = "cache/buffer_in-" + username + ".pem";
+  bufferoutFile = "cache/buffer_out-" + username + ".pem";
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);

@@ -105,6 +105,22 @@ void on_message(connection_hdl hdl,
                        websocketpp::frame::opcode::text);
       update(hdl);
 
+    } else if (json["type"] == "init") {
+      bool exists = false;
+      for (const auto& client : server_list[0].clients) {
+        if (json["name"] == client.client_id) {
+          exists = true;
+          break;
+        }
+      }
+      nlohmann::json reply;
+      reply["type"] = "init";
+      if (exists) {
+        reply["result"] = "exists";
+      } else {
+        reply["result"] = "doesnt exist";
+      }
+      echo_server.send(hdl, reply.dump(), websocketpp::frame::opcode::text);
     } else if (json["data"]["type"] == "chat") {
       // Handle other message types
       std::cout << "Received message: " << json["chat"]["message"] << std::endl;
