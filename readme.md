@@ -18,14 +18,15 @@ In one terminal do
 > ./server
 
 Create another terminal and do (can be repeated to make many clients)
-> ./client <username>
+> ./client [username]
 
 
 from a client you can do the following commands
 1. > clients (shows all connected clients and their username/userids)
 2. > public_chat "message"  (sends a message to all connected clients)
-3. > send_message <serverid>-<userid>* "message" (sends message to specific user[s])
-*note the <serverid>-<user-id> can be repeated to send messages to multiple users at once
+3. > send_message [serverid]-[userid] "message" (sends message to specific user[s])
+*note the [serverid]-[user-id] can be repeated to send messages to multiple users at once
+e.g., send_message server1-1 server1-2 "hello 1 and 2"
 
 IMPORTANT
 the "clients" command initialises the stored list of users that the current client can send to.
