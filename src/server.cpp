@@ -126,7 +126,7 @@ void on_message(connection_hdl hdl,
       // Handle other message types
       for(const auto& server : server_list){
         for(const auto& client : server.clients){
-          echo_server.send(hdl, json.dump(), websocketpp::frame::opcode::text);
+          echo_server.send(client.client_hdl, json.dump(), websocketpp::frame::opcode::text);
         }
       }
     } else if (json["type"] == "client_list_request") {

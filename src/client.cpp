@@ -4,6 +4,7 @@
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
 
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -66,6 +67,25 @@ std::string publicKeyFingerprint;
 std::string signature;
 std::string initialisationVector;
 std::string aesKey;
+
+// chat gpt's creation
+std::string getTTD() {
+  // Get the current time
+  auto now = std::chrono::system_clock::now();
+
+  // Add 1 minute (60 seconds) to the current time
+  now += std::chrono::seconds(60);
+
+  // Convert to time_t (calendar time)
+  std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+
+  // Format the time to UTC in the "YYYY-MM-DDTHH:MM:SSZ" format
+  std::tm* gmtime_now = std::gmtime(&time_now);
+  std::ostringstream oss;
+  oss << std::put_time(gmtime_now, "%Y-%m-%dT%H:%M:%SZ");
+
+  return oss.str();
+}
 
 int generate_keys() {
   // Construct the OpenSSL command for generating the private key
@@ -229,7 +249,48 @@ void on_message(connection_hdl,
       string myname = json["client_id"];
       cout << "Welcome client: " << myname << endl;
     } else if (json["data"]["type"] == "chat") {
-      cout << json << endl;
+      string chat = json["data"]["chat"];
+      for (const auto& key : json["data"]["symm_keys"]) {
+        string symmkey = key.get<std::string>();
+        writeStringToFile(bufferinFile, symmkey);
+        std::string cmd =
+            "openssl base64 -d -in " + bufferinFile + " -out " + bufferoutFile;
+        system(cmd.c_str());
+
+        cmd = "openssl rsautl -decrypt -inkey " + privateKeyFile + " -in " +
+              bufferoutFile + " -out " + aesKeyFile;
+        system(cmd.c_str());
+        string res = readStringFromFile(aesKeyFile);
+        if (res.length() == 65 && res[64] == '\n') {
+          string initvec = json["data"]["iv"];
+          string enc_chat = json["data"]["chat"];
+
+          writeStringToFile(bufferinFile, initvec);
+          cmd = "openssl base64 -d -in " + bufferinFile + " -out " +
+                initialisationVectorFile;
+          system(cmd.c_str());
+
+          writeStringToFile(bufferinFile, json["data"]["chat"]);
+          cmd = "openssl base64 -d -in " + bufferinFile + " -out " +
+                bufferoutFile;
+          system(cmd.c_str());
+
+          cmd = "openssl enc -d -aes-256-cbc -in " + bufferoutFile + " -out " +
+                bufferinFile + " -K $(cat " + aesKeyFile + ") -iv $(cat " +
+                initialisationVectorFile + ")";
+          system(cmd.c_str());
+          nlohmann::json final_message;
+          final_message["chat"] = nlohmann::json::parse(readStringFromFile(bufferinFile));
+
+          string sender_server = json["data"]["client-info"]["server-id"];
+          string sender_client = json["data"]["client-info"]["client-id"];
+          cout << "Message received from "
+               << sender_server << "-"
+               << sender_client << ":" << endl;
+
+          cout << final_message["chat"]["message"] << endl;
+        }
+      }
     }
     if (username == "admin") {
       std::cout << "Received message: " << payload << std::endl;
@@ -261,10 +322,10 @@ void client_send_loop() {
         if (first_word == "send_message") {
           // generate aes IV
           std::string cmd =
-              "openssl rand -base64 16 > " + initialisationVectorFile;
+              "openssl rand -hex 16 > " + initialisationVectorFile;
           system(cmd.c_str());
 
-          cmd = "openssl rand -base64 32 > " + aesKeyFile;
+          cmd = "openssl rand -hex 32 > " + aesKeyFile;
           system(cmd.c_str());
 
           string word;
@@ -295,7 +356,9 @@ void client_send_loop() {
             receivername.push_back(second);
           }
           vector<string> pubkeys;
-
+          // checks if the receiver is actually in clientlist
+          vector<string> filtered_servers;
+          vector<string> filtered_recipients;
           for (const auto& server : server_list) {
             string receiving_server = server.server_id;
             for (const auto& client : server.clients) {
@@ -304,14 +367,18 @@ void client_send_loop() {
                 if (receiving_server == servername[i] &&
                     receiving_user == receivername[i]) {
                   pubkeys.push_back(client.public_key);
+                  filtered_servers.push_back(server.address);
+                  filtered_recipients.push_back(client.client_id);
                   break;
                 }
               }
             }
           }
           nlohmann::json chat;
+          nlohmann::json priv_msg;
           vector<string> fingerprints;
           string msg;
+          // generate fingerprints
           for (const auto& key : pubkeys) {
             writeStringToFile(bufferinFile, key);
             writeStringToFile(bufferoutFile, key);
@@ -321,6 +388,22 @@ void client_send_loop() {
             fingerprints.push_back(readStringFromFile(bufferoutFile));
           }
           chat["participants"] = fingerprints;
+
+          // generate symm_key
+          vector<string> symm_key;
+          for (const auto& key : pubkeys) {
+            writeStringToFile(bufferinFile, key);
+            writeStringToFile(bufferoutFile, key);
+            std::string cmd = "openssl rsautl -encrypt -inkey " + bufferinFile +
+                              " -pubin -in " + aesKeyFile + " -out " +
+                              bufferoutFile;
+            system(cmd.c_str());
+            cmd =
+                "openssl base64 -in " + bufferoutFile + " -out " + bufferinFile;
+            system(cmd.c_str());
+            symm_key.push_back(readStringFromFile(bufferinFile));
+          }
+          priv_msg["data"]["symm_keys"] = symm_key;
 
           string text = "";
           for (int i = 0; i < message.length(); i++) {
@@ -335,12 +418,43 @@ void client_send_loop() {
           }
           chat["message"] = text;
 
-          nlohmann::json priv_msg;
+          std::ofstream messageFile(bufferinFile);
+          if (messageFile.is_open()) {
+            messageFile << chat.dump();  // Save the chat JSON as a string
+            messageFile.close();
+          } else {
+            std::cerr << "Failed to open file for writing!" << std::endl;
+          }
+          cmd = "openssl enc -aes-256-cbc -in " + bufferinFile + " -out " +
+                bufferoutFile + " -K $(cat " + aesKeyFile + ") -iv $(cat " +
+                initialisationVectorFile + ")";
+          system(cmd.c_str());
+
+          cmd = "openssl base64 -in " + bufferoutFile + " -out " + bufferinFile;
+          system(cmd.c_str());
           priv_msg["data"]["type"] = "chat";
-          priv_msg["data"]["chat"] = chat;
+          priv_msg["data"]["destination_servers"] = filtered_servers;
+          priv_msg["data"]["chat"] = readStringFromFile(bufferinFile);
           priv_msg["data"]["client-info"]["client-id"] = username;
           priv_msg["data"]["client-info"]["server-id"] =
               server_list[0].server_id;
+
+          cmd = "openssl base64 -in " + initialisationVectorFile + " -out " +
+                bufferoutFile;
+          system(cmd.c_str());
+          priv_msg["data"]["iv"] = readStringFromFile(bufferoutFile);
+          priv_msg["data"]["time-to-die"] = getTTD();
+          priv_msg["counter"] = to_string(counter);
+          priv_msg["type"] = "signed_data";
+
+          string plain_signature = priv_msg["data"].dump();
+          plain_signature = plain_signature + to_string(counter);
+
+          writeStringToFile("cache/data_counter.txt", plain_signature);
+
+          signDataWithPSS();
+          signature = readStringFromFile(SignatureFile);
+          priv_msg["signature"] = signature;
 
           client_instance.send(client_hdl, priv_msg.dump(),
                                websocketpp::frame::opcode::text);
