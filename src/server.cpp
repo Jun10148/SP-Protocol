@@ -148,7 +148,7 @@ void on_message(connection_hdl hdl,
 
         client_update["servers"].push_back(server_json);
       }
-
+      client_update["user"] = json["user"];
       for (const auto& client : server_list[0].clients) {
         echo_server.send(client.client_hdl, client_update.dump(),
                          websocketpp::frame::opcode::text);

@@ -211,6 +211,7 @@ void on_message(connection_hdl,
 
         server_list.push_back(server);
       }
+      if(json["user"] == username){
       for (const auto& server : server_list) {
         cout << "users in server-id: " << server.server_id
              << " located at: " << server.address << endl;
@@ -218,6 +219,7 @@ void on_message(connection_hdl,
         for (const auto& client : server.clients) {
           cout << client.client_id << endl;
         }
+      }
       }
     } else if (json["type"] == "init") {
       if (json["result"] == "exists") {
@@ -250,6 +252,8 @@ void on_message(connection_hdl,
       cout << "Welcome client: " << myname << endl;
     } else if (json["data"]["type"] == "chat") {
       string chat = json["data"]["chat"];
+      string sender_serverid = json["data"]["client-info"]["server-id"];
+      string sender_clientid = json["data"]["client-info"]["client-id"];
       for (const auto& key : json["data"]["symm_keys"]) {
         string symmkey = key.get<std::string>();
         writeStringToFile(bufferinFile, symmkey);
@@ -280,12 +284,12 @@ void on_message(connection_hdl,
                 initialisationVectorFile + ")";
           system(cmd.c_str());
           nlohmann::json final_message;
-          final_message["chat"] = nlohmann::json::parse(readStringFromFile(bufferinFile));
+          final_message["chat"] =
+              nlohmann::json::parse(readStringFromFile(bufferinFile));
 
           string sender_server = json["data"]["client-info"]["server-id"];
           string sender_client = json["data"]["client-info"]["client-id"];
-          cout << "Message received from "
-               << sender_server << "-"
+          cout << "Message received from " << sender_server << "-"
                << sender_client << ":" << endl;
 
           cout << final_message["chat"]["message"] << endl;
@@ -374,6 +378,7 @@ void client_send_loop() {
               }
             }
           }
+
           nlohmann::json chat;
           nlohmann::json priv_msg;
           vector<string> fingerprints;
@@ -387,6 +392,8 @@ void client_send_loop() {
             system(cmd.c_str());
             fingerprints.push_back(readStringFromFile(bufferoutFile));
           }
+          fingerprints.insert(fingerprints.begin(),
+                              readStringFromFile(publicKeyFingerprintFile));
           chat["participants"] = fingerprints;
 
           // generate symm_key
@@ -456,6 +463,7 @@ void client_send_loop() {
           signature = readStringFromFile(SignatureFile);
           priv_msg["signature"] = signature;
 
+          cout << "Sent message: " << text << endl;
           client_instance.send(client_hdl, priv_msg.dump(),
                                websocketpp::frame::opcode::text);
         } else if (first_word == "public_chat") {
@@ -499,6 +507,7 @@ void client_send_loop() {
           cout << "requesting server for client list" << endl;
           nlohmann::json client_req;
           client_req["type"] = "client_list_request";
+          client_req["user"] = username;
           client_instance.send(client_hdl, client_req.dump(),
                                websocketpp::frame::opcode::text);
         } else {
