@@ -265,7 +265,7 @@ void on_message(connection_hdl,
               bufferoutFile + " -out " + aesKeyFile;
         system(cmd.c_str());
         string res = readStringFromFile(aesKeyFile);
-        if (res.length() == 65 && res[64] == '\n') {
+        if (res.length() == 33 && res[32] == '\n') {
           string initvec = json["data"]["iv"];
           string enc_chat = json["data"]["chat"];
 
@@ -279,7 +279,7 @@ void on_message(connection_hdl,
                 bufferoutFile;
           system(cmd.c_str());
 
-          cmd = "openssl enc -d -aes-256-cbc -in " + bufferoutFile + " -out " +
+          cmd = "openssl enc -d -aes-128-cbc -in " + bufferoutFile + " -out " +
                 bufferinFile + " -K $(cat " + aesKeyFile + ") -iv $(cat " +
                 initialisationVectorFile + ")";
           system(cmd.c_str());
@@ -329,7 +329,7 @@ void client_send_loop() {
               "openssl rand -hex 16 > " + initialisationVectorFile;
           system(cmd.c_str());
 
-          cmd = "openssl rand -hex 32 > " + aesKeyFile;
+          cmd = "openssl rand -hex 16 > " + aesKeyFile;
           system(cmd.c_str());
 
           string word;
@@ -432,7 +432,7 @@ void client_send_loop() {
           } else {
             std::cerr << "Failed to open file for writing!" << std::endl;
           }
-          cmd = "openssl enc -aes-256-cbc -in " + bufferinFile + " -out " +
+          cmd = "openssl enc -aes-128-cbc -in " + bufferinFile + " -out " +
                 bufferoutFile + " -K $(cat " + aesKeyFile + ") -iv $(cat " +
                 initialisationVectorFile + ")";
           system(cmd.c_str());
