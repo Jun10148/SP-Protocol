@@ -47,6 +47,7 @@ CMakeFiles/client.dir/client.cpp.o
  ../include/websocketpp/logger/levels.hpp
  ../include/websocketpp/message_buffer/alloc.hpp
  ../include/websocketpp/message_buffer/message.hpp
+ ../include/websocketpp/normal_function.hpp
  ../include/websocketpp/processors/base.hpp
  ../include/websocketpp/processors/hybi00.hpp
  ../include/websocketpp/processors/hybi07.hpp

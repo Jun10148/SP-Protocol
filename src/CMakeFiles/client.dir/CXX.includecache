@@ -856,6 +856,14 @@ websocketpp/frame.hpp
 string
 -
 
+../include/websocketpp/normal_function.hpp
+string
+-
+fstream
+-
+iostream
+-
+
 ../include/websocketpp/processors/base.hpp
 websocketpp/close.hpp
 -
@@ -1214,6 +1222,8 @@ string
 thread
 -
 websocketpp/client.hpp
+-
+websocketpp/normal_function.hpp
 -
 websocketpp/config/asio_no_tls_client.hpp
 -
