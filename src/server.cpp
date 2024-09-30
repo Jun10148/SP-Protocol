@@ -1,17 +1,92 @@
+#include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <set>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/server.hpp>
 
+using websocketpp::client;
 using websocketpp::connection_hdl;
 using websocketpp::server;
-
+using namespace std;
 typedef server<websocketpp::config::asio> ws_server;
+typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
 
+ws_client reqclient;
+std::string privateKeyFile;
+std::string publicKeyFile;
+std::string publicKeyFingerprintFile;
+std::string SignatureFile;
+std::string private_key;
+std::string signature;
+std::string public_key;
+std::string publicKeyFingerprint;
+int counter = 0;
+// Function to connect to another server
+
+std::string readStringFromFile(const std::string& filename) {
+  std::ifstream inFile(filename);
+  std::stringstream buffer;
+
+  if (inFile.is_open()) {
+    buffer << inFile.rdbuf();  // Read file content into stringstream
+    inFile.close();
+    return buffer.str();  // Return the content as a string
+  } else {
+    std::cerr << "Error: Unable to open file for reading: " << filename
+              << std::endl;
+    return "";
+  }
+}
+int generate_keys() {
+  // Construct the OpenSSL command for generating the private key
+  std::string genPrivateKeyCmd =
+      "openssl genpkey -algorithm RSA -out " + privateKeyFile +
+      " -pkeyopt rsa_keygen_bits:2048 -pkeyopt rsa_keygen_pubexp:65537" +
+      " > cache/NUL 2>&1";
+
+  // Call the command using system()
+  system(genPrivateKeyCmd.c_str());
+  std::string genPublicKeyCmd = "openssl rsa -in " + privateKeyFile +
+                                " -pubout -out " + publicKeyFile +
+                                " > cache/NUL 2>&1";
+  system(genPublicKeyCmd.c_str());
+
+  return 0;
+}
+void writeStringToFile(const std::string& filename,
+                       const std::string& content) {
+  std::ofstream outFile(filename);
+
+  if (outFile.is_open()) {
+    outFile << content;
+    outFile.close();
+  } else {
+    std::cerr << "Error: Unable to open file for writing: " << filename
+              << std::endl;
+  }
+}
+void signDataWithPSS() {
+  // Step 1: Sign the data + counter with RSA-PSS and SHA-256
+  std::string signCommand =
+      "openssl dgst -sha256 -sigopt rsa_padding_mode:pss -sigopt "
+      "rsa_pss_saltlen:32 -sign " +
+      privateKeyFile +
+      " -out cache/signature-server.bin cache/data_counter-server.txt";
+  system(signCommand.c_str());
+
+  // Step 2: Base64-encode the signature
+  std::string base64EncodeCommand =
+      "openssl base64 -in cache/signature-server.bin -out " + SignatureFile;
+  system(base64EncodeCommand.c_str());
+}
 class Client {
  public:
   std::string client_id;
@@ -69,8 +144,47 @@ void update(connection_hdl hdl) {
   }
 }
 
+void send_serverhello(connection_hdl hdl, std::string ip) {
+  nlohmann::json serverhello;
+  serverhello["type"] = "signed_data";
+  serverhello["data"]["type"] = "server_hello";
+  serverhello["data"]["sender"] = ip;
+  serverhello["counter"] = std::to_string(counter);
+
+  std::string plain_signature = serverhello["data"].dump();
+  plain_signature = plain_signature + std::to_string(counter);
+  writeStringToFile("cache/data_counter-server.txt", plain_signature);
+
+  signDataWithPSS();
+  signature = readStringFromFile(SignatureFile);
+  serverhello["signature"] = signature;
+  reqclient.send(hdl, serverhello.dump(), websocketpp::frame::opcode::text);
+}
 void on_open(connection_hdl hdl) {
   std::cout << "Client connected." << std::endl;
+  send_serverhello(hdl, "localhost");
+  nlohmann::json update_req;
+  update_req["type"] = "client_update_request";
+  reqclient.send(hdl, update_req.dump(), websocketpp::frame::opcode::text);
+}
+
+void on_openc(websocketpp::connection_hdl hdl) {
+  // Handle a new connection
+  std::cout << "New connection opened!" << std::endl;
+}
+
+void connect_to_server(const std::string& uri) {
+  websocketpp::lib::error_code ec;
+  ws_client::connection_ptr con = reqclient.get_connection(uri, ec);
+
+  if (ec) {
+    std::cout << "Failed to connect to server: " << ec.message() << std::endl;
+    return;
+  }
+  con->set_open_handler(
+      &on_openc);  // Set the open handler to send Server Hello
+
+  reqclient.connect(con);
 }
 
 void on_close(connection_hdl hdl) {
@@ -124,9 +238,10 @@ void on_message(connection_hdl hdl,
       echo_server.send(hdl, reply.dump(), websocketpp::frame::opcode::text);
     } else if (json["data"]["type"] == "chat") {
       // Handle other message types
-      for(const auto& server : server_list){
-        for(const auto& client : server.clients){
-          echo_server.send(client.client_hdl, json.dump(), websocketpp::frame::opcode::text);
+      for (const auto& server : server_list) {
+        for (const auto& client : server.clients) {
+          echo_server.send(client.client_hdl, json.dump(),
+                           websocketpp::frame::opcode::text);
         }
       }
     } else if (json["type"] == "client_list_request") {
@@ -161,6 +276,20 @@ void on_message(connection_hdl hdl,
                            websocketpp::frame::opcode::text);
         }
       }
+    } else if (json["data"]["type"] == "server_hello") {
+      Server newserver =
+          Server(json["data"]["sender"], "unknown" + to_string(counter));
+      newserver.server_hdl = hdl;
+      server_list.push_back(newserver);
+    } else if (json["type"] == "client_update_request") {
+      nlohmann::json client_update = {{"type", "client_update"},
+                                      {"clients", nlohmann::json::array()}};
+      for (const auto& client : server_list[0].clients) {
+        nlohmann::json client_json = {{"client-id", client.client_id},
+                                      {"public-key", client.public_key}};
+        client_update["clients"].push_back(client_json);
+      }
+      reqclient.send(hdl, json.dump(), websocketpp::frame::opcode::text);
     } else {
       std::cout << "Received message: " << payload << std::endl;
     }
@@ -171,24 +300,35 @@ void on_message(connection_hdl hdl,
 }
 
 void server_send_loop() {
+  counter++;
   std::string message;
   while (true) {
-    /*
-    std::cout << "Enter a message to send to all clients: ";
     std::getline(std::cin, message);
-    if (!message.empty()) {
-      for (const auto& client : clients) {
-        echo_server.send(client.second.first, message,
-                         websocketpp::frame::opcode::text);
-        std::cout << "Sent to client with public key " << client.first << ": "
-                  << message << std::endl;
-      }
+    std::istringstream iss(message);
+    std::string first_word;
+    iss >> first_word;
+    if (first_word == "connect") {
+      std::string uri;
+      iss >> uri;
+      connect_to_server(uri);
+    } else {
+      cout << "unknown command" << endl;
     }
-    */
   }
 }
-
+void getPublicKeyFingerprint() {
+  std::string command = "openssl dgst -sha256 -binary " + publicKeyFile +
+                        " | openssl base64 -out " + publicKeyFingerprintFile;
+  // Execute the command
+  system(command.c_str());
+}
 int main() {
+  privateKeyFile = "cache/private_key-server1.pem";
+  publicKeyFile = "cache/public_key-server1.pem";
+  publicKeyFingerprintFile = "cache/public_key_fingerprint-server1.pem";
+  SignatureFile = "cache/signature-server1.pem";
+  generate_keys();
+  getPublicKeyFingerprint();
   server_list.push_back(Server("localhost", "server1"));
   echo_server.clear_access_channels(websocketpp::log::alevel::all);
   echo_server.clear_error_channels(websocketpp::log::elevel::all);

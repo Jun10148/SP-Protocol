@@ -479,7 +479,6 @@ void client_send_loop() {
           nlohmann::json public_chat;
           public_chat["data"]["type"] = "public_chat";
 
-          getPublicKeyFingerprint();
           publicKeyFingerprint = readStringFromFile(publicKeyFingerprintFile);
           public_chat["data"]["sender"] = publicKeyFingerprint;
 
@@ -547,6 +546,7 @@ int main(int argc, char* argv[]) {
   bufferoutFile = "cache/buffer_out-" + username + ".pem";
   initialisationVectorFile = "cache/iv-" + username + ".txt";
   aesKeyFile = "cache/aes_key-" + username + ".txt";
+  getPublicKeyFingerprint();
   // Disable logging
   client_instance.clear_access_channels(websocketpp::log::alevel::all);
   client_instance.clear_error_channels(websocketpp::log::elevel::all);
