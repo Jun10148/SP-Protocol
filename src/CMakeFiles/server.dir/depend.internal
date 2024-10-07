@@ -4,6 +4,7 @@
 CMakeFiles/server.dir/server.cpp.o
  ../include/nlohmann/json.hpp
  ../include/websocketpp/base64/base64.hpp
+ ../include/websocketpp/client.hpp
  ../include/websocketpp/close.hpp
  ../include/websocketpp/common/asio.hpp
  ../include/websocketpp/common/chrono.hpp
@@ -14,14 +15,18 @@ CMakeFiles/server.dir/server.cpp.o
  ../include/websocketpp/common/memory.hpp
  ../include/websocketpp/common/network.hpp
  ../include/websocketpp/common/platforms.hpp
+ ../include/websocketpp/common/random.hpp
  ../include/websocketpp/common/stdint.hpp
  ../include/websocketpp/common/system_error.hpp
  ../include/websocketpp/common/thread.hpp
  ../include/websocketpp/common/time.hpp
  ../include/websocketpp/common/type_traits.hpp
  ../include/websocketpp/concurrency/basic.hpp
+ ../include/websocketpp/concurrency/none.hpp
  ../include/websocketpp/config/asio_no_tls.hpp
+ ../include/websocketpp/config/asio_no_tls_client.hpp
  ../include/websocketpp/config/core.hpp
+ ../include/websocketpp/config/core_client.hpp
  ../include/websocketpp/connection.hpp
  ../include/websocketpp/connection_base.hpp
  ../include/websocketpp/endpoint.hpp
@@ -51,6 +56,8 @@ CMakeFiles/server.dir/server.cpp.o
  ../include/websocketpp/processors/hybi13.hpp
  ../include/websocketpp/processors/processor.hpp
  ../include/websocketpp/random/none.hpp
+ ../include/websocketpp/random/random_device.hpp
+ ../include/websocketpp/roles/client_endpoint.hpp
  ../include/websocketpp/roles/server_endpoint.hpp
  ../include/websocketpp/server.hpp
  ../include/websocketpp/sha1/sha1.hpp
