@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Find Boost
-find_package(Boost REQUIRED COMPONENTS system thread)
+find_package(Boost REQUIRED COMPONENTS system filesystem thread)
 
 # Find OpenSSL
 find_package(OpenSSL REQUIRED)
@@ -17,6 +17,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Add the server1 executable and set its output directory
 add_executable(server1_exec src/server1/server.cpp)
 set_target_properties(server1_exec PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/server1)
+# Link Boost, OpenSSL, and Boost Filesystem
 target_link_libraries(server1_exec ${Boost_LIBRARIES} OpenSSL::Crypto OpenSSL::SSL)
 
 # Add the client1 executable and set its output directory
@@ -27,6 +28,7 @@ target_link_libraries(client1_exec ${Boost_LIBRARIES} OpenSSL::Crypto OpenSSL::S
 # Add the server2 executable and set its output directory
 add_executable(server2_exec src/server2/server.cpp)
 set_target_properties(server2_exec PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/src/server2)
+# Link Boost, OpenSSL, and Boost Filesystem
 target_link_libraries(server2_exec ${Boost_LIBRARIES} OpenSSL::Crypto OpenSSL::SSL)
 
 # Add the client2 executable and set its output directory

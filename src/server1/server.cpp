@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -11,6 +12,7 @@
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/server.hpp>
 
+namespace fs = boost::filesystem;
 using websocketpp::client;
 using websocketpp::connection_hdl;
 using websocketpp::server;
@@ -30,6 +32,21 @@ std::string publicKeyFingerprint;
 int counter = 0;
 std::string message;
 // Function to connect to another server
+void deleteDirectoryContents(const std::string& dirPath) {
+    boost::filesystem::path path(dirPath);
+    
+    if (boost::filesystem::exists(path) && boost::filesystem::is_directory(path)) {
+        for (auto& entry : boost::filesystem::directory_iterator(path)) {
+            try {
+                boost::filesystem::remove_all(entry.path());
+            } catch (const boost::filesystem::filesystem_error& e) {
+                std::cerr << "Error deleting " << entry.path() << ": " << e.what() << std::endl;
+            }
+        }
+    } else {
+        std::cerr << "Directory does not exist: " << dirPath << std::endl;
+    }
+}
 
 std::string readStringFromFile(const std::string& filename) {
   std::ifstream inFile(filename);
@@ -393,7 +410,6 @@ void on_message(connection_hdl hdl,
 }
 
 void server_send_loop() {
-  
   while (true) {
     std::cout << "Enter serverip:port to connect to or type 'exit' to quit: ";
     std::getline(std::cin, message);
@@ -407,6 +423,8 @@ void server_send_loop() {
 }
 
 int main() {
+  std::string dirPath = "cache/";
+  deleteDirectoryContents(dirPath);
   privateKeyFile = "cache/private_key-server1.pem";
   publicKeyFile = "cache/public_key-server1.pem";
   publicKeyFingerprintFile = "cache/public_key_fingerprint-server1.pem";
