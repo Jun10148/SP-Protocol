@@ -39,5 +39,14 @@ However, running the "clients" command from 1 client will initialise the client 
 This also means, if a new client is made, the user has to also run "clients" again from any client.
 
 
+### Multi Server Usage
+1. Open 2 terminals. One at server1/ and the other at server2/
+2. Run ./server1_exec and ./server2_exec on each respective terminal
+3. type in localhost:9003 on server1's terminal. Then type localhost:9002 on server2's
+
+* Alternatively to the above, typing a different ip:port allows the server instance to connect to another running program if available
+
+4. Much like the single server, create more terminals to create users using ./client1_exec [username] or ./client2_exec [username]
+5. Interact between users similarly to the single server. Remember to initialise clients using "clients" for each server
 
 
