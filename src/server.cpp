@@ -353,15 +353,11 @@ void on_message(connection_hdl hdl,
     } else if (json["type"] == "client_update") {
       for (int i = 0; i < server_list.size(); i++) {
         if (i != 0) {
-          if (hdl.lock().get() == server_list[i].server_hdl.lock().get()) {
-            server_list[i].clients.clear();
-            for (const auto& newclient : json["clients"]) {
-              string clientid = newclient.value("client-id", "a");
-              string clientkey = newclient.value("public-key", "b");
-              server_list[i].clients.push_back(
-                  Client(clientid, clientkey, hdl));
-            }
-            break;
+          server_list[1].clients.clear();
+          for (const auto& newclient : json["clients"]) {
+            string clientid = newclient.value("client-id", "a");
+            string clientkey = newclient.value("public-key", "b");
+            server_list[1].clients.push_back(Client(clientid, clientkey, hdl));
           }
         }
       }

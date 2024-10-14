@@ -17,6 +17,8 @@
 //The directory containing a CMake configuration file for Boost.
 Boost_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/Boost-1.71.0
 
+Boost_FILESYSTEM_LIBRARY_RELEASE:STRING=/usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0
+
 //Path to a file.
 Boost_INCLUDE_DIR:PATH=/usr/include
 
@@ -252,14 +254,11 @@ WebSocketChat_BINARY_DIR:STATIC=/home/seojunlee/SP/SP-Protocol/src
 //Value Computed by CMake
 WebSocketChat_SOURCE_DIR:STATIC=/home/seojunlee/SP/SP-Protocol
 
-//Value Computed by CMake
-WebSocketJSONTest_BINARY_DIR:STATIC=/home/seojunlee/SP/SP-Protocol/src
-
-//Value Computed by CMake
-WebSocketJSONTest_SOURCE_DIR:STATIC=/home/seojunlee/SP/SP-Protocol
-
 //The directory containing a CMake configuration file for boost_atomic.
 boost_atomic_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/boost_atomic-1.71.0
+
+//The directory containing a CMake configuration file for boost_filesystem.
+boost_filesystem_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/boost_filesystem-1.71.0
 
 //The directory containing a CMake configuration file for boost_headers.
 boost_headers_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/boost_headers-1.71.0
@@ -464,6 +463,8 @@ _OPENSSL_VERSION:INTERNAL=
 __pkg_config_checked__OPENSSL:INTERNAL=1
 //ADVANCED property for variable: boost_atomic_DIR
 boost_atomic_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: boost_filesystem_DIR
+boost_filesystem_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: boost_headers_DIR
 boost_headers_DIR-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: boost_system_DIR

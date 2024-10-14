@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/server2_exec.dir/server2/server.cpp.o  -o server2/server2_exec  /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0 /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0 /usr/lib/x86_64-linux-gnu/libcrypto.so /usr/lib/x86_64-linux-gnu/libssl.so /usr/lib/x86_64-linux-gnu/libboost_atomic.so.1.71.0 -lpthread /usr/lib/x86_64-linux-gnu/libcrypto.so 

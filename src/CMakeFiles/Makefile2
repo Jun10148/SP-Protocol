@@ -53,9 +53,10 @@ CMAKE_BINARY_DIR = /home/seojunlee/SP/SP-Protocol/src
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/test.dir/all
-all: CMakeFiles/client.dir/all
-all: CMakeFiles/server.dir/all
+all: CMakeFiles/client2_exec.dir/all
+all: CMakeFiles/server2_exec.dir/all
+all: CMakeFiles/client1_exec.dir/all
+all: CMakeFiles/server1_exec.dir/all
 
 .PHONY : all
 
@@ -65,92 +66,120 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/test.dir/clean
-clean: CMakeFiles/client.dir/clean
-clean: CMakeFiles/server.dir/clean
+clean: CMakeFiles/client2_exec.dir/clean
+clean: CMakeFiles/server2_exec.dir/clean
+clean: CMakeFiles/client1_exec.dir/clean
+clean: CMakeFiles/server1_exec.dir/clean
 
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/test.dir
+# Target rules for target CMakeFiles/client2_exec.dir
 
 # All Build rule for target.
-CMakeFiles/test.dir/all:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/depend
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=5,6 "Built target test"
-.PHONY : CMakeFiles/test.dir/all
+CMakeFiles/client2_exec.dir/all:
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/depend
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=3,4 "Built target client2_exec"
+.PHONY : CMakeFiles/client2_exec.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/test.dir/rule: cmake_check_build_system
+CMakeFiles/client2_exec.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/test.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/client2_exec.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 0
-.PHONY : CMakeFiles/test.dir/rule
+.PHONY : CMakeFiles/client2_exec.dir/rule
 
 # Convenience name for target.
-test: CMakeFiles/test.dir/rule
+client2_exec: CMakeFiles/client2_exec.dir/rule
 
-.PHONY : test
+.PHONY : client2_exec
 
 # clean rule for target.
-CMakeFiles/test.dir/clean:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/clean
-.PHONY : CMakeFiles/test.dir/clean
+CMakeFiles/client2_exec.dir/clean:
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/clean
+.PHONY : CMakeFiles/client2_exec.dir/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/client.dir
+# Target rules for target CMakeFiles/server2_exec.dir
 
 # All Build rule for target.
-CMakeFiles/client.dir/all:
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/depend
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=1,2 "Built target client"
-.PHONY : CMakeFiles/client.dir/all
+CMakeFiles/server2_exec.dir/all:
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/depend
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=7,8 "Built target server2_exec"
+.PHONY : CMakeFiles/server2_exec.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/client.dir/rule: cmake_check_build_system
+CMakeFiles/server2_exec.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/client.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/server2_exec.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 0
-.PHONY : CMakeFiles/client.dir/rule
+.PHONY : CMakeFiles/server2_exec.dir/rule
 
 # Convenience name for target.
-client: CMakeFiles/client.dir/rule
+server2_exec: CMakeFiles/server2_exec.dir/rule
 
-.PHONY : client
+.PHONY : server2_exec
 
 # clean rule for target.
-CMakeFiles/client.dir/clean:
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/clean
-.PHONY : CMakeFiles/client.dir/clean
+CMakeFiles/server2_exec.dir/clean:
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/clean
+.PHONY : CMakeFiles/server2_exec.dir/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/server.dir
+# Target rules for target CMakeFiles/client1_exec.dir
 
 # All Build rule for target.
-CMakeFiles/server.dir/all:
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/depend
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=3,4 "Built target server"
-.PHONY : CMakeFiles/server.dir/all
+CMakeFiles/client1_exec.dir/all:
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/depend
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=1,2 "Built target client1_exec"
+.PHONY : CMakeFiles/client1_exec.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/server.dir/rule: cmake_check_build_system
+CMakeFiles/client1_exec.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 2
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/server.dir/all
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/client1_exec.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 0
-.PHONY : CMakeFiles/server.dir/rule
+.PHONY : CMakeFiles/client1_exec.dir/rule
 
 # Convenience name for target.
-server: CMakeFiles/server.dir/rule
+client1_exec: CMakeFiles/client1_exec.dir/rule
 
-.PHONY : server
+.PHONY : client1_exec
 
 # clean rule for target.
-CMakeFiles/server.dir/clean:
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/clean
-.PHONY : CMakeFiles/server.dir/clean
+CMakeFiles/client1_exec.dir/clean:
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/clean
+.PHONY : CMakeFiles/client1_exec.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/server1_exec.dir
+
+# All Build rule for target.
+CMakeFiles/server1_exec.dir/all:
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/depend
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/seojunlee/SP/SP-Protocol/src/CMakeFiles --progress-num=5,6 "Built target server1_exec"
+.PHONY : CMakeFiles/server1_exec.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/server1_exec.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 2
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/server1_exec.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/seojunlee/SP/SP-Protocol/src/CMakeFiles 0
+.PHONY : CMakeFiles/server1_exec.dir/rule
+
+# Convenience name for target.
+server1_exec: CMakeFiles/server1_exec.dir/rule
+
+.PHONY : server1_exec
+
+# clean rule for target.
+CMakeFiles/server1_exec.dir/clean:
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/clean
+.PHONY : CMakeFiles/server1_exec.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

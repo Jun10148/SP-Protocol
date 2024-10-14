@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/seojunlee/SP/SP-Protocol/src
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -77,6 +66,17 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -111,124 +111,164 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test
+# Target rules for targets named client2_exec
 
 # Build rule for target.
-test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test
-.PHONY : test
+client2_exec: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 client2_exec
+.PHONY : client2_exec
 
 # fast build rule for target.
-test/fast:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/build
-.PHONY : test/fast
+client2_exec/fast:
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/build
+.PHONY : client2_exec/fast
 
 #=============================================================================
-# Target rules for targets named client
+# Target rules for targets named server2_exec
 
 # Build rule for target.
-client: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 client
-.PHONY : client
+server2_exec: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 server2_exec
+.PHONY : server2_exec
 
 # fast build rule for target.
-client/fast:
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
-.PHONY : client/fast
+server2_exec/fast:
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/build
+.PHONY : server2_exec/fast
 
 #=============================================================================
-# Target rules for targets named server
+# Target rules for targets named client1_exec
 
 # Build rule for target.
-server: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 server
-.PHONY : server
+client1_exec: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 client1_exec
+.PHONY : client1_exec
 
 # fast build rule for target.
-server/fast:
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
-.PHONY : server/fast
+client1_exec/fast:
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/build
+.PHONY : client1_exec/fast
 
-client.o: client.cpp.o
+#=============================================================================
+# Target rules for targets named server1_exec
 
-.PHONY : client.o
+# Build rule for target.
+server1_exec: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 server1_exec
+.PHONY : server1_exec
 
-# target to build an object file
-client.cpp.o:
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cpp.o
-.PHONY : client.cpp.o
+# fast build rule for target.
+server1_exec/fast:
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/build
+.PHONY : server1_exec/fast
 
-client.i: client.cpp.i
+server1/client.o: server1/client.cpp.o
 
-.PHONY : client.i
-
-# target to preprocess a source file
-client.cpp.i:
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cpp.i
-.PHONY : client.cpp.i
-
-client.s: client.cpp.s
-
-.PHONY : client.s
-
-# target to generate assembly for a file
-client.cpp.s:
-	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cpp.s
-.PHONY : client.cpp.s
-
-server.o: server.cpp.o
-
-.PHONY : server.o
+.PHONY : server1/client.o
 
 # target to build an object file
-server.cpp.o:
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cpp.o
-.PHONY : server.cpp.o
+server1/client.cpp.o:
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/server1/client.cpp.o
+.PHONY : server1/client.cpp.o
 
-server.i: server.cpp.i
+server1/client.i: server1/client.cpp.i
 
-.PHONY : server.i
+.PHONY : server1/client.i
 
 # target to preprocess a source file
-server.cpp.i:
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cpp.i
-.PHONY : server.cpp.i
+server1/client.cpp.i:
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/server1/client.cpp.i
+.PHONY : server1/client.cpp.i
 
-server.s: server.cpp.s
+server1/client.s: server1/client.cpp.s
 
-.PHONY : server.s
+.PHONY : server1/client.s
 
 # target to generate assembly for a file
-server.cpp.s:
-	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cpp.s
-.PHONY : server.cpp.s
+server1/client.cpp.s:
+	$(MAKE) -f CMakeFiles/client1_exec.dir/build.make CMakeFiles/client1_exec.dir/server1/client.cpp.s
+.PHONY : server1/client.cpp.s
 
-test.o: test.cpp.o
+server1/server.o: server1/server.cpp.o
 
-.PHONY : test.o
+.PHONY : server1/server.o
 
 # target to build an object file
-test.cpp.o:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cpp.o
-.PHONY : test.cpp.o
+server1/server.cpp.o:
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/server1/server.cpp.o
+.PHONY : server1/server.cpp.o
 
-test.i: test.cpp.i
+server1/server.i: server1/server.cpp.i
 
-.PHONY : test.i
+.PHONY : server1/server.i
 
 # target to preprocess a source file
-test.cpp.i:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cpp.i
-.PHONY : test.cpp.i
+server1/server.cpp.i:
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/server1/server.cpp.i
+.PHONY : server1/server.cpp.i
 
-test.s: test.cpp.s
+server1/server.s: server1/server.cpp.s
 
-.PHONY : test.s
+.PHONY : server1/server.s
 
 # target to generate assembly for a file
-test.cpp.s:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cpp.s
-.PHONY : test.cpp.s
+server1/server.cpp.s:
+	$(MAKE) -f CMakeFiles/server1_exec.dir/build.make CMakeFiles/server1_exec.dir/server1/server.cpp.s
+.PHONY : server1/server.cpp.s
+
+server2/client.o: server2/client.cpp.o
+
+.PHONY : server2/client.o
+
+# target to build an object file
+server2/client.cpp.o:
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/server2/client.cpp.o
+.PHONY : server2/client.cpp.o
+
+server2/client.i: server2/client.cpp.i
+
+.PHONY : server2/client.i
+
+# target to preprocess a source file
+server2/client.cpp.i:
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/server2/client.cpp.i
+.PHONY : server2/client.cpp.i
+
+server2/client.s: server2/client.cpp.s
+
+.PHONY : server2/client.s
+
+# target to generate assembly for a file
+server2/client.cpp.s:
+	$(MAKE) -f CMakeFiles/client2_exec.dir/build.make CMakeFiles/client2_exec.dir/server2/client.cpp.s
+.PHONY : server2/client.cpp.s
+
+server2/server.o: server2/server.cpp.o
+
+.PHONY : server2/server.o
+
+# target to build an object file
+server2/server.cpp.o:
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/server2/server.cpp.o
+.PHONY : server2/server.cpp.o
+
+server2/server.i: server2/server.cpp.i
+
+.PHONY : server2/server.i
+
+# target to preprocess a source file
+server2/server.cpp.i:
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/server2/server.cpp.i
+.PHONY : server2/server.cpp.i
+
+server2/server.s: server2/server.cpp.s
+
+.PHONY : server2/server.s
+
+# target to generate assembly for a file
+server2/server.cpp.s:
+	$(MAKE) -f CMakeFiles/server2_exec.dir/build.make CMakeFiles/server2_exec.dir/server2/server.cpp.s
+.PHONY : server2/server.cpp.s
 
 # Help Target
 help:
@@ -236,20 +276,24 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... test"
-	@echo "... client"
-	@echo "... server"
-	@echo "... client.o"
-	@echo "... client.i"
-	@echo "... client.s"
-	@echo "... server.o"
-	@echo "... server.i"
-	@echo "... server.s"
-	@echo "... test.o"
-	@echo "... test.i"
-	@echo "... test.s"
+	@echo "... rebuild_cache"
+	@echo "... client2_exec"
+	@echo "... server2_exec"
+	@echo "... client1_exec"
+	@echo "... server1_exec"
+	@echo "... server1/client.o"
+	@echo "... server1/client.i"
+	@echo "... server1/client.s"
+	@echo "... server1/server.o"
+	@echo "... server1/server.i"
+	@echo "... server1/server.s"
+	@echo "... server2/client.o"
+	@echo "... server2/client.i"
+	@echo "... server2/client.s"
+	@echo "... server2/server.o"
+	@echo "... server2/server.i"
+	@echo "... server2/server.s"
 .PHONY : help
 
 
