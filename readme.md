@@ -38,6 +38,7 @@ Hence, this command MUST be called prior to sending messages
 However, running the "clients" command from 1 client will initialise the client list for all other active clients
 This also means, if a new client is made, the user has to also run "clients" again from any client.
 
+If this step is not done correctly, the program cannot correctly identify usernames and in place of username, the sender's public key will be used.
 
 ### Multi Server Usage
 1. Open 2 terminals. One at server1/ and the other at server2/
