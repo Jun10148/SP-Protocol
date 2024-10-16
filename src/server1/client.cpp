@@ -14,6 +14,7 @@
 #include <thread>
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
+#include <regex>
 
 using namespace std;
 using websocketpp::client;
@@ -531,12 +532,26 @@ void client_send_loop() {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    cout << "erroneous input" << endl;
-    return 0;
-  } else {
-    username = argv[1];
-  }
+  std::string input(argv[1]);
+  std::regex valid_pattern("^[a-zA-Z0-9_]+$");
+  // Ensure exactly one argument is passed (argv[1] should be the object name)
+    if (argc != 2) {
+        std::cerr << "Error: Invalid number of arguments." << std::endl;
+        return 1; // Return non-zero error code for invalid input
+    }
+    // Check if argv[1] is "()" or empty
+    else if (input == "()" || argc == 0) {
+        std::cerr << "Error: Invalid input. Please provide a valid object name." << std::endl;
+        return 1; // Return error code
+    }
+    // If the input contains characters outside the allowed set, it's invalid
+    else if (!std::regex_match(argv[1], valid_pattern)) {
+        std::cerr << "Error: Input contains invalid characters. Only alphanumeric characters and underscores are allowed." << std::endl;
+        return 1;
+    }
+    else{
+        username = argv[1];
+    }
   privateKeyFile = "cache/private_key-" + username + ".pem";
   publicKeyFile = "cache/public_key-" + username + ".pem";
   publicKeyFingerprintFile =

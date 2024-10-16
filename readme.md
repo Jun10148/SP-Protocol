@@ -19,7 +19,8 @@ Building the project:
 ### Single Server Usage
 1. cd into server1/
 2. run ./server1_exec
-3. Create a new terminal and run ./client1_exec [username]
+3. Create a new terminal and run ./client1_exec [username] 
+*note - using inputs such as () as a username will not work as it triggers a shell interpretation opening up bash instead  
 4. Repeat step 3 to create more users as needed
 
 
