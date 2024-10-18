@@ -1,3 +1,12 @@
+Group 69 SP Protocol Implementation
+Members:
+Easwar Allada - a1851456
+Seojun Lee - a1849414
+Khush Patel - a1852760
+Yuqi Xiao - a1849716
+
+Github Link: https://github.com/Jun10148/SP-Protocol
+
 to run:
 
 required installations (through terminal):
@@ -9,7 +18,7 @@ required installations (through terminal):
 
 Building the project:
 
-1. delete "CMakeCache.txt"
+1. delete src/"CMakeCache.txt" (if it exists)
 2. cd into "src"
 3. > cmake ..
 4. > make
