@@ -1,9 +1,15 @@
 Group 69 SP Protocol Implementation
+
 Members:
+
 Easwar Allada - a1851456
+
 Seojun Lee - a1849414
+
 Khush Patel - a1852760
+
 Yuqi Xiao - a1849716
+
 
 Github Link: https://github.com/Jun10148/SP-Protocol
 
